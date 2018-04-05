@@ -85,27 +85,6 @@ def test_s2():
     assert sum2(13,[2,3,4,12])==False
     assert sum2(12,[1,3,4,6,8])==(4,8)
 
-"""FB
-Given strings s and x, locate the occurrence of x in s. The function 
-returns the integer denoting the first occurrence of the string x .
-"""
-def locate_substring(s, x):
-    i = 0
-    for i in range(len(s) - len(x) + 1):
-        for j in range(len(x)):
-            if s[i+j] == x[j]:
-                j += 1
-            else:
-                break
-        if j == len(x):
-            return j - len(x) + 1
-        i += 1
-    return -1
-
-def test_ls():
-    assert locate_substring('abcdefgbcd', 'bcd')
-    assert locate_substring('abcdefgbcd', 'abcd')
-
 """
 takes a list of multiple meeting time ranges and returns
 a list of condensed ranges
@@ -140,7 +119,28 @@ def fib(n):
 
 def test_f():
     assert [fib(n) for n in range(5)]==[0,1,1,2,3]
-    
+  
+"""FB
+Given strings s and x, locate the occurrence of x in s. The function 
+returns the integer denoting the first occurrence of the string x .
+"""
+def locate_substring(s, x):
+    i = 0
+    for i in range(len(s) - len(x) + 1):
+        for j in range(len(x)):
+            if s[i+j] == x[j]:
+                j += 1
+            else:
+                break
+        if j == len(x):
+            return j - len(x) + 1
+        i += 1
+    return -1
+
+def test_ls():
+    assert locate_substring('abcdefgbcd', 'bcd')
+    assert locate_substring('abcdefgbcd', 'abcd')
+  
 """FB
 Given an array, verify if the reverse is the same.
 """

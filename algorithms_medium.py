@@ -6,105 +6,108 @@ Created on Thu Mar  8 18:57:47 2018
 @author: yutingyw
 """
 
+"""FB
+Given two arrays, return True if the words array is sorted according to the
+ordering array.
 """
-takes stock_prices_yesterday and returns the best profit
-I could have made from 1 purchase and 1 sale of 1 Apple
-stock yesterday
+def compare_two_words(words, ordering):
+    if '' in words:
+        return True
+    else:
+        try:
+            first_index = ordering.index(words[0][0])
+            second_index = ordering.index(words[1][0])
+        except:
+            return False
+        if first_index > second_index:
+            return False
+        elif first_index == second_index:
+            return compare_two_words([w[1:] for w in words], ordering)
+        else:
+            return True
+
+def sort_by_order(words, ordering):
+    if len(words) == 1:
+        return True
+    return compare_two_words(words[:2], ordering) and sort_by_order(words[1:], ordering)
+
+def test_sbo():
+    words = ['cc','cb','bb','ac']
+    assert sort_by_order(words, ['c','b','a']) == True
+    assert sort_by_order(words, ['b','c','a']) == False
+    assert sort_by_order(words, ['c','b']) == False
+
+"""FB
+Given a string of keys (can have different combinations of keys), and a
+key-to-patterns dictionary, return a list of all patterns possible.
 """
-def max_profit(lst):
-    if len(lst)<2:
-        raise ValueError('should have at least 2 values')
+def combinations_lst(keystr, keylst, prev):
+    if keystr == '':
+        print([prev])
+        return [prev]
+    combinations = []
+    for i in range(1,len(keystr)+1):
+        if keystr[:i] in keylst:
+            print(keystr[:i])
+            combinations += combinations_lst(keystr[i:], keylst, prev + [keystr[:i]])
+    return combinations
 
-    maxdiff = lst[1]-lst[0]
-    minval = min(lst[0],lst[1])
-    for i in range(2,len(lst)):
-        val = lst[i]
-        diff = val-minval
-        if diff>maxdiff:
-            maxdiff = diff
-        if val<minval:
-            minval = val
-    return maxdiff
+def test_cl():
+    assert combinations_lst('12',['1','12','2'],[]) == [['1','2'], ['12']]
+    assert combinations_lst('1234',['1','2','12','23','3','34'],[]) \
+        == [['1','2','34'], ['12','34']]
+    assert combinations_lst('1234',['1','2','12','23','3','34','4'],[]) \
+        == [['1','2','3','4'], ['1','2','34'], ['1','23','4'], ['12','3','4'], ['12','34']]
 
-def test_mp():
-    assert max_profit([10, 7, 5, 8, 11, 9])==6
+def patterns_lst(combination, key_patterns, prefix):
+    if combination == []:
+        return [prefix]
+    patterns = []
+    for pattern in key_patterns[combination[0]]:
+        patterns += patterns_lst(combination[1:], key_patterns, prefix + pattern)
+    return patterns
 
+def test_pl():
+    keys_patterns = {'1':['A','B','C'], \
+                     '2':['D','E'], \
+                     '3':['P','Q']}
+    assert patterns_lst(['1','2','3'], keys_patterns, '') == ['ADP', 'ADQ', 'AEP', \
+        'AEQ', 'BDP', 'BDQ', 'BEP', 'BEQ', 'CDP', 'CDQ', 'CEP', 'CEQ']
+
+def keys_to_patterns(keystr, keys_patterns):
+    keylst = list(keys_patterns.keys())
+    combinations = combinations_lst(keystr, keylst, [])
+    patterns = []
+    for combination in combinations:
+        patterns += patterns_lst(combination, keys_patterns, '')
+    return patterns
+
+def test_ktp():
+    keys_patterns = {'1':['A','B','C'], \
+                     '2':['D','E'], \
+                     '12':['X'], \
+                     '3':['P','Q']}
+    assert keys_to_patterns('123', keys_patterns) == ['ADP', 'ADQ', 'AEP', \
+        'AEQ', 'BDP', 'BDQ', 'BEP', 'BEQ', 'CDP', 'CDQ', 'CEP', 'CEQ', 'XP', 'XQ']    
+
+"""FB
+Count the number of possible decodings given a digit sequence.
 """
-You have a list of integers, and for each index you want
-to find the product of every integer except the integer
-at that index
-"""
-def prod_except_at_index(lst):
-    left = [1]
-    right = [1]
-    for i in range(1,len(lst)):
-        left.append(lst[i-1]*left[-1])
-    for i in range(len(lst)-2,-1,-1):
-        right.append(lst[i+1]*right[-1])
-    return [left[i]*right[len(lst)-i-1] for i in range(len(lst))]
+ord_chr = {str(i - ord('A') + 1): chr(i) for i in range(ord('A'), ord('Z') + 1)}
+def decode_combinations(digits, prefix):
+    if len(digits) == 0:
+        return [prefix]
+    combinations = []
+    for i in range(1, len(digits) + 1):
+        if digits[:i] in ord_chr:
+            decode = ord_chr[digits[:i]]
+            combinations += decode_combinations(digits[i:], prefix + decode)
+    return combinations
 
-def test_peai():
-    assert prod_except_at_index([1, 7, 3, 4])==[84, 12, 28, 21]
+def test_dc():
+    assert decode_combinations('121', '') == ['ABA','AU','LA']
+    assert decode_combinations('1234', '') == ['ABCD','AWD','LCD']
 
-"""
-Given a list of integers, find the highest product you
-can get from three of the integers
-"""
-def highest_3prod(lst):
-    highest = max(lst[0],lst[1])
-    lowest = highest
-    highest2 = lst[0]*lst[1]
-    lowest2 = highest2
-    highest3 = highest2*lst[2]
-    for i in range(2,len(lst)):
-        val = lst[i]
-        prod3 = max(highest2*val,lowest2*val)
-        if prod3>highest3:
-            highest3 = prod3
-        prod2 = max(highest*val,lowest*val)
-        if prod2>highest2:
-            highest2 = prod2
-        if prod2<lowest2:
-            lowest2 = prod2
-        if val>highest:
-            highest = val
-        if val<lowest:
-            lowest = val
-    return highest3
-
-def test_h3():
-    assert highest_3prod([1, 10, -5, 1, -100])==5000
-
-"""
-computes the number of ways to make the amount of money
-with coins of the available denominations
-"""
-memo={}
-def ways_make_amount(amount,lst):
-    memo_key = (amount,len(lst))
-    if memo_key in memo:
-        print('grabbing '+str(memo_key))
-        return memo[memo_key]
-
-    if amount==0:
-        return 1
-    if amount<0:
-        return 0
-    if lst==[]:
-        return 0
-
-    n_ways = 0
-    while amount>=0:
-        print('looping with '+str(amount)+' and '+str(lst[1:]))
-        n_ways += ways_make_amount(amount,lst[1:])
-        print('deducting '+str(lst[0])+' from '+str(amount))
-        amount -= lst[0]
-    memo[memo_key] = n_ways
-    return n_ways
-
-def test_wma():
-    assert ways_make_amount(4,[1,2,3])==4
-    
 """FB
 Construct binary tree from given inorder and preorder traversal lists.
 """
@@ -275,196 +278,6 @@ def test_su():
     {'g': {'o': {'.': {'a': {'i': {'*': {}, \
     '/': {'a': {'l': {'p': {'h': {'a': {'*': {}}}}}}}}}}}}}
 
-"""
-Find the unique ID among other IDs which have 2 copies
-"""
-def find_unique(lst):
-    unique = 0
-    for i in lst:
-        unique ^= i
-    return unique
-
-def test_fu():
-    assert find_unique([3234134,990,3234134,33345, \
-                        990,234,234])==33345
-
-"""
-check if a singly-linked list has a cycle
-"""
-def contain_cycle(node):
-    if node==None:
-        return False
-    i = 0
-    slowrunner = node
-    fastrunner = node.next
-    while fastrunner:
-        if fastrunner==slowrunner:
-            return True
-        fastrunner = fastrunner.next
-        if i%2==0:
-            slowrunner = slowrunner.next
-        i +=1
-    return False
-
-"""
-reverse words in a string
-"""
-def reverse_words(string):
-    def reverse_char(w):
-        new = [None]*len(w)
-        n = len(w)-1
-        i = 0
-        while i<=n-i:
-            new[i],new[n-i] = w[n-i],w[i]
-            i += 1
-        return ''.join(new)
-    string = reverse_char(string)
-    lst = string.split()
-    for i in range(len(lst)):
-        lst[i] = reverse_char(lst[i])
-    return ' '.join(lst)
-
-def test_rw():
-    assert reverse_words('secret team solving codes')== \
-                        'codes solving team secret'
-
-"""
-return all permutations of a string (no duplicates in it)
-"""
-def string_permutations(string):
-    if len(string)<=1:
-        return set([string])
-    perm = string_permutations(string[:-1])
-    allperm = set()
-    for p in perm:
-        for i in range(len(string)):
-            allperm.add(p[:i]+string[-1]+p[i:])
-    return allperm
-
-def test_sp():
-    assert string_permutations('cat')==\
-        set(['cat','cta','atc','act','tac','tca'])
-
-"""
-in-place shuffle a list uniformly, meaning each item in the
-original list must have the same probabliiyt of ending up in
-each spot in the final list
-"""
-def inplace_shuffle(lst):
-    import random
-    if len(lst)<=1:
-        return lst
-    for i in range(len(lst)-1):
-        random_index = random.randrange(i,len(lst))
-        if random_index!=i:
-            lst[i],lst[random_index]=lst[random_index],lst[i]
-    return lst
-
-def test_is():
-    print(inplace_shuffle([1,3,2,56,23,555]))
-
-"""FB
-Given two arrays, return True if the words array is sorted according to the
-ordering array.
-"""
-def compare_two_words(words, ordering):
-    if '' in words:
-        return True
-    else:
-        try:
-            first_index = ordering.index(words[0][0])
-            second_index = ordering.index(words[1][0])
-        except:
-            return False
-        if first_index > second_index:
-            return False
-        elif first_index == second_index:
-            return compare_two_words([w[1:] for w in words], ordering)
-        else:
-            return True
-
-def sort_by_order(words, ordering):
-    if len(words) == 1:
-        return True
-    return compare_two_words(words[:2], ordering) and sort_by_order(words[1:], ordering)
-
-def test_sbo():
-    words = ['cc','cb','bb','ac']
-    assert sort_by_order(words, ['c','b','a']) == True
-    assert sort_by_order(words, ['b','c','a']) == False
-    assert sort_by_order(words, ['c','b']) == False
-
-"""FB
-Given a string of keys (can have different combinations of keys), and a
-key-to-patterns dictionary, return a list of all patterns possible.
-"""
-def combinations_lst(keystr, keylst, prev):
-    if keystr == '':
-        print([prev])
-        return [prev]
-    combinations = []
-    for i in range(1,len(keystr)+1):
-        if keystr[:i] in keylst:
-            print(keystr[:i])
-            combinations += combinations_lst(keystr[i:], keylst, prev + [keystr[:i]])
-    return combinations
-
-def test_cl():
-    assert combinations_lst('12',['1','12','2'],[]) == [['1','2'], ['12']]
-    assert combinations_lst('1234',['1','2','12','23','3','34'],[]) \
-        == [['1','2','34'], ['12','34']]
-    assert combinations_lst('1234',['1','2','12','23','3','34','4'],[]) \
-        == [['1','2','3','4'], ['1','2','34'], ['1','23','4'], ['12','3','4'], ['12','34']]
-
-def patterns_lst(combination, key_patterns, prefix):
-    if combination == []:
-        return [prefix]
-    patterns = []
-    for pattern in key_patterns[combination[0]]:
-        patterns += patterns_lst(combination[1:], key_patterns, prefix + pattern)
-    return patterns
-
-def test_pl():
-    keys_patterns = {'1':['A','B','C'], \
-                     '2':['D','E'], \
-                     '3':['P','Q']}
-    assert patterns_lst(['1','2','3'], keys_patterns, '') == ['ADP', 'ADQ', 'AEP', \
-        'AEQ', 'BDP', 'BDQ', 'BEP', 'BEQ', 'CDP', 'CDQ', 'CEP', 'CEQ']
-
-def keys_to_patterns(keystr, keys_patterns):
-    keylst = list(keys_patterns.keys())
-    combinations = combinations_lst(keystr, keylst, [])
-    patterns = []
-    for combination in combinations:
-        patterns += patterns_lst(combination, keys_patterns, '')
-    return patterns
-
-def test_ktp():
-    keys_patterns = {'1':['A','B','C'], \
-                     '2':['D','E'], \
-                     '12':['X'], \
-                     '3':['P','Q']}
-    assert keys_to_patterns('123', keys_patterns) == ['ADP', 'ADQ', 'AEP', \
-        'AEQ', 'BDP', 'BDQ', 'BEP', 'BEQ', 'CDP', 'CDQ', 'CEP', 'CEQ', 'XP', 'XQ']    
-
-"""FB
-Count the number of possible decodings given a digit sequence.
-"""
-ord_chr = {str(i - ord('A') + 1): chr(i) for i in range(ord('A'), ord('Z') + 1)}
-def decode_combinations(digits, prefix):
-    if len(digits) == 0:
-        return [prefix]
-    combinations = []
-    for i in range(1, len(digits) + 1):
-        if digits[:i] in ord_chr:
-            decode = ord_chr[digits[:i]]
-            combinations += decode_combinations(digits[i:], prefix + decode)
-    return combinations
-
-def test_dc():
-    assert decode_combinations('121', '') == ['ABA','AU','LA']
-    assert decode_combinations('1234', '') == ['ABCD','AWD','LCD']
-
 """FB
 Given a dictionary and a M x N board where every cell has one character. 
 Find all possible words that can be formed by a sequence of adjacent 
@@ -556,6 +369,36 @@ def test_ikp():
     assert is_k_palindrome('acdcb', 2)
     assert is_k_palindrome('acdcb', 1) == False
 
+"""
+computes the number of ways to make the amount of money
+with coins of the available denominations
+"""
+memo={}
+def ways_make_amount(amount,lst):
+    memo_key = (amount,len(lst))
+    if memo_key in memo:
+        print('grabbing '+str(memo_key))
+        return memo[memo_key]
+
+    if amount==0:
+        return 1
+    if amount<0:
+        return 0
+    if lst==[]:
+        return 0
+
+    n_ways = 0
+    while amount>=0:
+        print('looping with '+str(amount)+' and '+str(lst[1:]))
+        n_ways += ways_make_amount(amount,lst[1:])
+        print('deducting '+str(lst[0])+' from '+str(amount))
+        amount -= lst[0]
+    memo[memo_key] = n_ways
+    return n_ways
+
+def test_wma():
+    assert ways_make_amount(4,[1,2,3])==4
+    
 """FB
 Find subarray with given sum.
 """
@@ -706,3 +549,160 @@ Maximum of each and contiguous k subarray.
 """
 def k_subarray_max(lst, k):
     pass
+
+"""
+takes stock_prices_yesterday and returns the best profit
+I could have made from 1 purchase and 1 sale of 1 Apple
+stock yesterday
+"""
+def max_profit(lst):
+    if len(lst)<2:
+        raise ValueError('should have at least 2 values')
+
+    maxdiff = lst[1]-lst[0]
+    minval = min(lst[0],lst[1])
+    for i in range(2,len(lst)):
+        val = lst[i]
+        diff = val-minval
+        if diff>maxdiff:
+            maxdiff = diff
+        if val<minval:
+            minval = val
+    return maxdiff
+
+def test_mp():
+    assert max_profit([10, 7, 5, 8, 11, 9])==6
+
+"""
+You have a list of integers, and for each index you want
+to find the product of every integer except the integer
+at that index
+"""
+def prod_except_at_index(lst):
+    left = [1]
+    right = [1]
+    for i in range(1,len(lst)):
+        left.append(lst[i-1]*left[-1])
+    for i in range(len(lst)-2,-1,-1):
+        right.append(lst[i+1]*right[-1])
+    return [left[i]*right[len(lst)-i-1] for i in range(len(lst))]
+
+def test_peai():
+    assert prod_except_at_index([1, 7, 3, 4])==[84, 12, 28, 21]
+
+"""
+Given a list of integers, find the highest product you
+can get from three of the integers
+"""
+def highest_3prod(lst):
+    highest = max(lst[0],lst[1])
+    lowest = highest
+    highest2 = lst[0]*lst[1]
+    lowest2 = highest2
+    highest3 = highest2*lst[2]
+    for i in range(2,len(lst)):
+        val = lst[i]
+        prod3 = max(highest2*val,lowest2*val)
+        if prod3>highest3:
+            highest3 = prod3
+        prod2 = max(highest*val,lowest*val)
+        if prod2>highest2:
+            highest2 = prod2
+        if prod2<lowest2:
+            lowest2 = prod2
+        if val>highest:
+            highest = val
+        if val<lowest:
+            lowest = val
+    return highest3
+
+def test_h3():
+    assert highest_3prod([1, 10, -5, 1, -100])==5000
+
+"""
+Find the unique ID among other IDs which have 2 copies
+"""
+def find_unique(lst):
+    unique = 0
+    for i in lst:
+        unique ^= i
+    return unique
+
+def test_fu():
+    assert find_unique([3234134,990,3234134,33345, \
+                        990,234,234])==33345
+
+"""
+check if a singly-linked list has a cycle
+"""
+def contain_cycle(node):
+    if node==None:
+        return False
+    i = 0
+    slowrunner = node
+    fastrunner = node.next
+    while fastrunner:
+        if fastrunner==slowrunner:
+            return True
+        fastrunner = fastrunner.next
+        if i%2==0:
+            slowrunner = slowrunner.next
+        i +=1
+    return False
+
+"""
+reverse words in a string
+"""
+def reverse_words(string):
+    def reverse_char(w):
+        new = [None]*len(w)
+        n = len(w)-1
+        i = 0
+        while i<=n-i:
+            new[i],new[n-i] = w[n-i],w[i]
+            i += 1
+        return ''.join(new)
+    string = reverse_char(string)
+    lst = string.split()
+    for i in range(len(lst)):
+        lst[i] = reverse_char(lst[i])
+    return ' '.join(lst)
+
+def test_rw():
+    assert reverse_words('secret team solving codes')== \
+                        'codes solving team secret'
+
+"""
+return all permutations of a string (no duplicates in it)
+"""
+def string_permutations(string):
+    if len(string)<=1:
+        return set([string])
+    perm = string_permutations(string[:-1])
+    allperm = set()
+    for p in perm:
+        for i in range(len(string)):
+            allperm.add(p[:i]+string[-1]+p[i:])
+    return allperm
+
+def test_sp():
+    assert string_permutations('cat')==\
+        set(['cat','cta','atc','act','tac','tca'])
+
+"""
+in-place shuffle a list uniformly, meaning each item in the
+original list must have the same probabliiyt of ending up in
+each spot in the final list
+"""
+def inplace_shuffle(lst):
+    import random
+    if len(lst)<=1:
+        return lst
+    for i in range(len(lst)-1):
+        random_index = random.randrange(i,len(lst))
+        if random_index!=i:
+            lst[i],lst[random_index]=lst[random_index],lst[i]
+    return lst
+
+def test_is():
+    print(inplace_shuffle([1,3,2,56,23,555]))

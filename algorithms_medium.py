@@ -104,6 +104,59 @@ def ways_make_amount(amount,lst):
 
 def test_wma():
     assert ways_make_amount(4,[1,2,3])==4
+    
+"""FB
+Construct binary tree from given inorder and preorder traversal lists.
+"""
+class Node(object):
+    def __init__(self):
+        self.value = None
+        self.left = None
+        self.right = None
+
+def construct_bt(root, inorder):
+    if len(construct_bt.preorder) == 0:
+        return
+    if len(inorder) == 0:
+        return
+    value = construct_bt.preorder.popleft()
+    root.value = value
+    print(value)
+    print('inorder ', inorder)
+    print('preorder ', construct_bt.preorder)
+    inorder_index = inorder.index(value)
+    print('inorder_index ', inorder_index)
+    if inorder_index > 0:
+        root.left = Node()
+        root.right = Node()
+        print('left inorder ', inorder[:inorder_index])
+        print('right inorder ', inorder[(inorder_index+1):])
+        construct_bt(root.left, inorder[:inorder_index])
+        construct_bt(root.right, inorder[(inorder_index+1):])
+    else:
+        root.right = Node()
+        print('right inorder ', inorder[1:])
+        construct_bt(root.right, inorder[1:])
+
+def inorder_lst(root):
+    if not root:
+        return []
+    return inorder_lst(root.left) + [root.value] + inorder_lst(root.right)
+
+def preorder_lst(root):
+    if not root:
+        return []
+    return [root.value] + preorder_lst(root.left) + preorder_lst(root.right)
+
+def test_cb():    
+    from collections import deque
+    inorder = ['D','B','E','A','F','C']
+    preorder = deque(['A','B','D','E','C','F'])
+    root = Node()
+    construct_bt.preorder = preorder
+    construct_bt(root, inorder)
+    assert inorder_lst(root) == ['D', None, 'B', 'E', None, 'A', 'F', None, 'C', None]
+    assert preorder_lst(root) == ['A', 'B', 'D', None, 'E', None, 'C', 'F', None, None]
 
 """
 A tree is "superbalanced" if the difference between the

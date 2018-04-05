@@ -209,6 +209,40 @@ def is_balanced_bfs(root):
     return True
 
 """
+Construct balanced bst from sorted list.
+"""
+def bst_from_sorted(root, lst):
+    if not lst:
+        return
+    mid = len(lst) // 2
+    root.value = lst[mid]
+    print(mid, root.value)
+    if mid > 0:
+        root.left = Node()
+        bst_from_sorted(root.left, lst[:mid])
+    if mid < len(lst) - 1:
+        root.right = Node()
+        bst_from_sorted(root.right, lst[(mid+1):])
+
+def tree_lst(root, left_space, right_space):
+    if not root:
+        return ' '*left_space + '*' + ' '*right_space
+    if not root.value:
+        root.value = '*'
+    lst = tree_lst(root.left, left_space, right_space + 2) + str(root.value) + \
+                  tree_lst(root.right, left_space + 2, right_space)
+    print(lst)
+    return
+        
+def test_bfs():
+    root = Node()
+    bst_from_sorted(root, [1,2,3,4,5,6,7])
+    assert inorder_lst(root) == [1, 2, 3, 4, 5, 6,7]
+    print(preorder_lst(root))
+    tree_lst(root, 1, 1)
+    return root
+    
+"""
 check if a binary tree is a BST
 """
 def is_bst(root):
@@ -550,6 +584,37 @@ Maximum of each and contiguous k subarray.
 def k_subarray_max(lst, k):
     pass
 
+"""FB
+Balanced parentheses.
+"""
+def balance_parentheses(lst):
+    op = 0
+    cl = 0
+    ret = ''
+    for c in lst:
+        if c == '(':
+            op += 1
+        else:
+            cl += 1
+        if op >= cl:
+            ret += c
+        else:
+            cl -= 1
+        print(ret, op, cl)
+    rett = ''
+    count = 0
+    for c in ret:
+        if c == '(':
+            count += 1
+            if count > cl:
+                continue
+        rett += c
+    return rett
+
+def test_bp():
+    assert balance_parentheses(')((())') == '(())'
+    assert balance_parentheses(')))(()))())') == '(())()'
+    
 """
 takes stock_prices_yesterday and returns the best profit
 I could have made from 1 purchase and 1 sale of 1 Apple

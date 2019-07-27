@@ -6,6 +6,46 @@ Created on Thu Mar  8 18:57:47 2018
 @author: yutingyw
 """
 
+"""
+Regular expression matching.
+"""
+def regex_match(s, p):
+    T = {} # shall not use array, as reference is easily changed unexpectedly [[False] * (len(p) + 1)] * (len(s) + 1)
+    T[(0, 0)] = True # '' matched with ''
+
+    for j in range(1, len(p) + 1):
+        if p[j - 1] == '*':
+            T[(0, j)] = T[(0, j - 1)] # only '*' matches with ''
+        else:
+            T[(0, j)] = False
+
+    for i in range(1, len(s) + 1):
+        T[(i, 0)] = False
+
+    for i in range(1, len(s) + 1):
+        for j in range(1, len(p) + 1):
+
+            if p[j - 1] == '*': # corresonds to j'th column of T
+                print('* i=%d j=%d T[(%d,%d)]=%d T[(%d,%d)]=%d' % (i, j, i, j-1, T[(i, j-1)], i-1, j, T[(i-1,j)]))
+                T[(i, j)] = T[(i, j - 1)] or T[(i - 1, j)]
+
+            elif p[j - 1] == '?' or p[j - 1] == s[i - 1]:
+                print('i=%d j=%d T[(%d,%d)]=%d' % (i, j, i-1, j-1, T[(i-1, j-1)]))
+                T[(i, j)] = T[(i - 1, j - 1)]
+
+            else:
+                print('false', i,j)
+                T[(i, j)] = False
+
+    print(T)
+    return T[(len(s), len(p))]
+
+assert regex_match('ba', 'ba') == True
+assert regex_match('baaabab', 'baaa?ab') == True
+assert regex_match('baaabab', 'ba*a?') == True
+assert regex_match('baaabab', 'a*ab') == False
+assert regex_match('baaabab', '*****ba*****ab') == True
+
 """FB
 Given two arrays, return True if the words array is sorted according to the
 ordering array.
@@ -459,10 +499,34 @@ def ways_make_amount(amount,lst):
 def test_wma():
     assert ways_make_amount(4,[1,2,3])==4
 
-"""FB
-Find subarray with given sum.
 """
-def subarray_given_sum(lst, amt):
+Find the number of contiguous subarrays with given sum.
+"""
+def subarray_given_sum(lst, k):
+    s = 0
+    dic = {0: 1}
+    count = 0
+    for n in lst:
+        s += n
+        if s - k in dic:
+            print(s, s-k, count, dic[s-k])
+            count += dic[s - k]
+            print(count)
+
+        if s not in dic:
+            dic[s] = 1
+        else:
+            dic[s] += 1
+    return count
+
+assert subarray_given_sum([1, -1, 1], 2) == 0, subarray_given_sum([1, -1, 1], 2)
+assert subarray_given_sum([1, -1, 1, 1], 2) == 2, subarray_given_sum([1, -1, 1, 1], 2)
+assert subarray_given_sum([1, -1, 1, 1, 1, -1, 2], 2) == 8, subarray_given_sum([1, -1, 1, 1, 1, -1, 2], 2)
+
+"""FB
+Find positive subarray with given sum.
+"""
+def psubarray_given_sum(lst, amt):
     curr_sum = 0
     start = 0
     for i in range(len(lst)):
@@ -474,25 +538,9 @@ def subarray_given_sum(lst, amt):
             return start, i
     return -1
 
-    # version 2
-    n = len(lst)
-    start = 0
-    end = 1
-    curr_sum = lst[0]
-    while (end <= n):
-        while (curr_sum > amt) and (start < end - 1):
-            curr_sum -= lst[start]
-            start += 1
-        if curr_sum == amt:
-            return start, end - 1
-        if end < n:
-            curr_sum += lst[end]
-        end += 1
-    return -1
-
-assert subarray_given_sum([1, 4, 20, 3, 10, 5], 33) == (2, 4)
-assert subarray_given_sum([1, 4, 0, 0, 3, 10, 5], 7) == (1, 4)
-assert subarray_given_sum([1, 4], 0) == -1
+assert psubarray_given_sum([1, 4, 20, 3, 10, 5], 33) == (2, 4)
+assert psubarray_given_sum([1, 4, 0, 0, 3, 10, 5], 7) == (1, 4)
+assert psubarray_given_sum([1, 4], 0) == -1
 
 """
 Largest sum of contiguous subarray.
@@ -645,12 +693,6 @@ def min_subarray_greaterx_sum(lst, x):
 def test_msgs():
     assert min_subarray_greaterx_sum([1, 4, 45, 6, 0, 19], 51) == [4, 45, 6]
     assert min_subarray_greaterx_sum([1, 10, 5, 2, 7], 9) == [10]
-    
-"""
-Maximum of each and contiguous k subarray.
-"""
-def k_subarray_max(lst, k):
-    pass
 
 """FB
 Balanced parentheses.
@@ -782,28 +824,33 @@ can get from three of the integers
 """
 def highest_3prod(lst):
     highest = max(lst[0],lst[1])
-    lowest = highest
+    lowest = min(lst[0], lst[1])
     highest2 = lst[0]*lst[1]
     lowest2 = highest2
     highest3 = highest2*lst[2]
-    for i in range(3,len(lst)):
+    for i in range(2,len(lst)):
         val = lst[i]
         prod3 = max(highest2*val,lowest2*val)
         if prod3>highest3:
+            print(highest3, 'highest3', prod3)
             highest3 = prod3
         prod2 = max(highest*val,lowest*val)
         prod2_lo = min(highest*val,lowest*val)
         if prod2>highest2:
+            print(highest2, 'highest2', prod2)
             highest2 = prod2
         if prod2_lo<lowest2:
+            print(lowest2, 'lowest2', prod2_lo)
             lowest2 = prod2_lo
         if val>highest:
+            print(val, 'highest', val)
             highest = val
         if val<lowest:
+            print(val, 'lowest', val)
             lowest = val
     return highest3
 
-assert highest_3prod([1, 10, -5, 1, -100])==5000
+assert highest_3prod([1, 10, -5, 1, -100])==5000, highest_3prod([1, 10, -5, 1, -100])
 
 """
 Find the unique ID among other IDs which have 2 copies

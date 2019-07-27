@@ -31,11 +31,10 @@ def sort_by_order(words, ordering):
         return True
     return compare_two_words(words[:2], ordering) and sort_by_order(words[1:], ordering)
 
-def test_sbo():
-    words = ['cc','cb','bb','ac']
-    assert sort_by_order(words, ['c','b','a']) == True
-    assert sort_by_order(words, ['b','c','a']) == False
-    assert sort_by_order(words, ['c','b']) == False
+words = ['cc','cb','bb','ac']
+assert sort_by_order(words, ['c','b','a']) == True
+assert sort_by_order(words, ['b','c','a']) == False
+assert sort_by_order(words, ['c','b']) == False
 
 """FB
 Given a string of keys (can have different combinations of keys), and a
@@ -104,9 +103,8 @@ def decode_combinations(digits, prefix):
             combinations += decode_combinations(digits[i:], prefix + decode)
     return combinations
 
-def test_dc():
-    assert decode_combinations('121', '') == ['ABA','AU','LA']
-    assert decode_combinations('1234', '') == ['ABCD','AWD','LCD']
+assert decode_combinations('121', '') == ['ABA','AU','LA']
+assert decode_combinations('1234', '') == ['ABCD','AWD','LCD']
 
 """FB
 Construct binary tree from given inorder and preorder traversal lists.
@@ -233,7 +231,7 @@ def tree_lst(root, left_space, right_space):
                   tree_lst(root.right, left_space + 2, right_space)
     print(lst)
     return
-        
+
 def test_bfs():
     root = Node()
     bst_from_sorted(root, [1,2,3,4,5,6,7])
@@ -241,7 +239,7 @@ def test_bfs():
     print(preorder_lst(root))
     tree_lst(root, 1, 1)
     return root
-    
+
 """
 check if a binary tree is a BST
 """
@@ -307,10 +305,40 @@ def save_url(lst):
             current['*'] = {}
     return root
 
-def test_su():
-    assert save_url(['go.ai','go.ai/alpha','go.ai'])== \
+assert save_url(['go.ai','go.ai/alpha','go.ai'])== \
     {'g': {'o': {'.': {'a': {'i': {'*': {}, \
     '/': {'a': {'l': {'p': {'h': {'a': {'*': {}}}}}}}}}}}}}
+
+"""
+find common prefix of a list of words
+"""
+def common_prefix(lst):
+    root = {}
+    for word in lst:
+        current = root
+        for c in word:
+            if c not in current:
+                current[c] = {}
+            current = current[c]
+        if '*' in current:
+            print(word + ' existed')
+        else:
+            print('saved ' + word)
+            current['*'] = {}
+
+    current = root
+    common = ''
+    while(len(current.keys()) == 1):
+        k = list(current.keys())[0]
+        if k != '*':
+            common += k
+            current = current[k]
+        else:
+            break
+    return common
+
+assert common_prefix(['abcde', 'abcre', 'abdde']) == 'ab'
+assert common_prefix(['abcde', 'abcdefg', 'abcdefgh']) == 'abcde'
 
 """FB
 Given a dictionary and a M x N board where every cell has one character. 
@@ -387,9 +415,8 @@ def lcs(X, Y):
                 memo[i][j] = memo[i][j-1]
     return memo[m][n]
 
-def test_lcs():
-    assert lcs('AGGTAB', 'GXTXAYB') == 'GTAB'
-    
+assert lcs('AGGTAB', 'GXTXAYB') == 'GTAB'
+
 """FB
 Determine if a string is k-palindrome, i.e. palindrome upon removing at most
 k characters.
@@ -399,9 +426,8 @@ def is_k_palindrome(string, k):
     s = lcs(string, reverse)
     return len(string) - len(s) <= k
 
-def test_ikp():
-    assert is_k_palindrome('acdcb', 2)
-    assert is_k_palindrome('acdcb', 1) == False
+assert is_k_palindrome('acdcb', 2)
+assert is_k_palindrome('acdcb', 1) == False
 
 """
 computes the number of ways to make the amount of money
@@ -432,11 +458,23 @@ def ways_make_amount(amount,lst):
 
 def test_wma():
     assert ways_make_amount(4,[1,2,3])==4
-    
+
 """FB
 Find subarray with given sum.
 """
 def subarray_given_sum(lst, amt):
+    curr_sum = 0
+    start = 0
+    for i in range(len(lst)):
+        curr_sum += lst[i]
+        while (curr_sum > amt) and (start < i):
+            curr_sum -= lst[start]
+            start += 1
+        if curr_sum == amt:
+            return start, i
+    return -1
+
+    # version 2
     n = len(lst)
     start = 0
     end = 1
@@ -452,15 +490,32 @@ def subarray_given_sum(lst, amt):
         end += 1
     return -1
 
-def test_sgs():
-    assert subarray_given_sum([1, 4, 20, 3, 10, 5], 33) == (2, 4)
-    assert subarray_given_sum([1, 4, 0, 0, 3, 10, 5], 7) == (1, 4)
-    assert subarray_given_sum([1, 4], 0) == -1
+assert subarray_given_sum([1, 4, 20, 3, 10, 5], 33) == (2, 4)
+assert subarray_given_sum([1, 4, 0, 0, 3, 10, 5], 7) == (1, 4)
+assert subarray_given_sum([1, 4], 0) == -1
 
 """
 Largest sum of contiguous subarray.
 """
 def subarray_max_sum(lst):
+    max_sum = 0
+    max_start = 0
+    max_end = 0
+    curr_sum = 0
+    curr_start = 0
+    for i in range(len(lst)):
+        if curr_sum < 0:
+            curr_sum = lst[i]
+            curr_start = i
+        else:
+            curr_sum += lst[i]
+        if max_sum < curr_sum:
+            max_sum = curr_sum
+            max_start = curr_start
+            max_end = i
+    return max_sum, max_start, max_end
+
+    # version 2
     sliding_sum, max_sum = 0, 0
     sliding_start, max_start, max_end = 0, 0, 0
     for sliding_end in range(len(lst)):
@@ -474,13 +529,27 @@ def subarray_max_sum(lst):
             max_end = sliding_end
     return max_sum, max_start, max_end
 
-def test_sms():
-    assert subarray_max_sum([-2, -3, 4, -1, -2, 1, 5, -3]) == (7, 2, 6)
+assert subarray_max_sum([-2, -3, 4, -1, -2, 1, 5, -3]) == (7, 2, 6)
 
 """
 Largest sum of k contiguous subarray.
 """
 def k_subarray_max_sum(lst, k):
+    assert len(lst) >= k
+    max_sum = 0
+    max_start = 0
+    max_end = 0
+    curr_sum = sum(lst[:k])
+    for i in range(k, len(lst)):
+        curr_sum += lst[i]
+        curr_sum -= lst[i - k]
+        if max_sum < curr_sum:
+            max_sum = curr_sum
+            max_start = i - k + 1
+            max_end = i
+    return max_sum, max_start, max_end
+
+    # version 2
     n = len(lst)
     sliding_start, max_start, max_end = 0, 0, k-1
     sliding_sum = sum(lst[:k])
@@ -494,8 +563,7 @@ def k_subarray_max_sum(lst, k):
             max_end = sliding_end
     return max_sum, max_start, max_end
 
-def test_ksms():
-    assert k_subarray_max_sum([1, 2, 3, 1, 4, 5, 2, 3, 6], 3) == (10, 5, 7)
+assert k_subarray_max_sum([1, 2, 3, 1, 4, 5, 2, 3, 6], 3) == (11, 4, 6), k_subarray_max_sum([1, 2, 3, 1, 4, 5, 2, 3, 6], 3)
 
 """FB
 Given an array and a number k, find the largest sum of the subarray containing 
@@ -523,7 +591,7 @@ def greaterk_subarray_max_sum(lst, k):
             running_sum += lst[start]
         end += 1
     return [lst[i] for i in range(max_start, max_end+1)]
-    
+
 #    running_sum = sum(lst[:k])
 #    max_sum = running_sum
 #    max_start = 0
@@ -594,6 +662,26 @@ def balance_parentheses(lst):
     for c in lst:
         if c == '(':
             op += 1
+            ret += c
+        elif c == ')':
+            if cl < op:
+                cl += 1
+                ret += c
+    rett = ''
+    for c in ret:
+        if (op > cl) and (c == '('):
+            op -= 1
+        else:
+            rett += c
+    return rett
+
+    # version 2
+    op = 0
+    cl = 0
+    ret = ''
+    for c in lst:
+        if c == '(':
+            op += 1
         else:
             cl += 1
         if op >= cl:
@@ -611,9 +699,8 @@ def balance_parentheses(lst):
         rett += c
     return rett
 
-def test_bp():
-    assert balance_parentheses(')((())') == '(())'
-    assert balance_parentheses(')))(()))())') == '(())()'
+assert balance_parentheses(')((())') == '(())'
+assert balance_parentheses(')))(()))())') == '(())()'
 
 """
 Check whether or not an input string's openers and closers are properly nested.
@@ -645,7 +732,10 @@ def is_valid(code):
                     return False
 
     return openers_stack == []
-    
+
+assert is_valid('(()[]') == False
+assert is_valid('(())[{}[]]') == True
+
 """
 takes stock_prices_yesterday and returns the best profit
 I could have made from 1 purchase and 1 sale of 1 Apple
@@ -696,24 +786,24 @@ def highest_3prod(lst):
     highest2 = lst[0]*lst[1]
     lowest2 = highest2
     highest3 = highest2*lst[2]
-    for i in range(2,len(lst)):
+    for i in range(3,len(lst)):
         val = lst[i]
         prod3 = max(highest2*val,lowest2*val)
         if prod3>highest3:
             highest3 = prod3
         prod2 = max(highest*val,lowest*val)
+        prod2_lo = min(highest*val,lowest*val)
         if prod2>highest2:
             highest2 = prod2
-        if prod2<lowest2:
-            lowest2 = prod2
+        if prod2_lo<lowest2:
+            lowest2 = prod2_lo
         if val>highest:
             highest = val
         if val<lowest:
             lowest = val
     return highest3
 
-def test_h3():
-    assert highest_3prod([1, 10, -5, 1, -100])==5000
+assert highest_3prod([1, 10, -5, 1, -100])==5000
 
 """
 Find the unique ID among other IDs which have 2 copies
@@ -764,9 +854,8 @@ def reverse_words(string):
         lst[i] = reverse_char(lst[i])
     return ' '.join(lst)
 
-def test_rw():
-    assert reverse_words('secret team solving codes')== \
-                        'codes solving team secret'
+assert reverse_words('secret team solving codes')== \
+                    'codes solving team secret'
 
 """
 return all permutations of a string (no duplicates in it)
@@ -781,13 +870,12 @@ def string_permutations(string):
             allperm.add(p[:i]+string[-1]+p[i:])
     return allperm
 
-def test_sp():
-    assert string_permutations('cat')==\
-        set(['cat','cta','atc','act','tac','tca'])
+assert string_permutations('cat')==\
+    set(['cat','cta','atc','act','tac','tca'])
 
 """
 in-place shuffle a list uniformly, meaning each item in the
-original list must have the same probabliiyt of ending up in
+original list must have the same probability of ending up in
 each spot in the final list
 """
 def inplace_shuffle(lst):
@@ -800,5 +888,5 @@ def inplace_shuffle(lst):
             lst[i],lst[random_index]=lst[random_index],lst[i]
     return lst
 
-def test_is():
-    print(inplace_shuffle([1,3,2,56,23,555]))
+print(inplace_shuffle([1,3,2,56,23,555]))
+

@@ -6,6 +6,25 @@ Created on Wed Mar 28 19:49:48 2018
 @author: yutingyw
 """
 
+################################# merge #################################
+
+"""
+takes a list of multiple meeting time ranges and returns
+a list of condensed ranges
+"""
+def merge_ranges(lst):
+    slst = sorted(lst)
+    merged = [slst[0]]
+    for i,(start,end) in enumerate(slst):
+        if start<=merged[-1][1]:
+            merged[-1] = (merged[-1][0],max(end,merged[-1][1]))
+        else:
+            merged.append((start,end))
+    return merged
+
+assert merge_ranges([(0, 1), (3, 5), (4, 8), (10, 12), (9, 10)]) \
+        == [(0, 1), (3, 8), (9, 12)]
+
 """FB
 We have our lists of orders sorted numerically already, in lists.
 Write a function to merge our lists of orders into one sorted list.
@@ -27,6 +46,8 @@ def merge_sorted_lst(lst1, lst2):
 
 assert merge_sorted_lst([3, 4, 6, 10, 11, 15], [1, 5, 8, 12, 14, 19]) \
                        == [1, 3, 4, 5, 6, 8, 10, 11, 12, 14, 15, 19]
+
+################################# sort #################################
 
 """FB
 Given an array of random numbers, push (in place) all the zero’s of a given
@@ -65,54 +86,7 @@ def count_sort(lst,highest):
 assert count_sort([37, 89, 65, 65, 91, 53],100) \
         == [91, 89, 65, 65, 53, 37]
 
-"""
-find 2 numbers sumed up to an amount
-"""
-def sum2(amount,lst):
-    counts = {}
-    for n in lst:
-        counts[n] = 1+counts.get(n,0)
-    for n in lst:
-        rest = amount-n
-        if rest in counts:
-            return (n,rest)
-    return False
-
-assert sum2(13,[2,3,4,12])==False
-assert sum2(12,[1,3,4,6,8])==(4,8)
-
-"""
-takes a list of multiple meeting time ranges and returns
-a list of condensed ranges
-"""
-def merge_ranges(lst):
-    slst = sorted(lst)
-    merged = [slst[0]]
-    for i,(start,end) in enumerate(slst):
-        if start<=merged[-1][1]:
-            merged[-1] = (merged[-1][0],max(end,merged[-1][1]))
-        else:
-            merged.append((start,end))
-    return merged
-
-assert merge_ranges([(0, 1), (3, 5), (4, 8), (10, 12), (9, 10)]) \
-        == [(0, 1), (3, 8), (9, 12)]
-
-"""
-compute fibonacci
-"""
-def fib(n):
-    if n in [0,1]:
-        return n
-    prev = 1
-    prev_prev = 0
-    for _ in range(2,n+1):
-        s = prev+prev_prev
-        prev_prev = prev
-        prev = s
-    return s
-
-assert [fib(n) for n in range(5)]==[0,1,1,2,3]
+################################# locate #################################
 
 """FB
 Given strings s and x, locate the occurrence of x in s. The function 
@@ -131,6 +105,8 @@ def locate_substring(s, x):
 
 assert locate_substring('abcdefgbcd', 'bcd') == 1
 assert locate_substring('abcdefgbcd', 'abcd') == 0
+
+################################# palindrome #################################
 
 """FB
 Given an array, verify if the reverse is the same.
@@ -176,6 +152,8 @@ assert permutation_palindrome('civic')==True
 assert permutation_palindrome('ivicc')==True
 assert permutation_palindrome('civil')==False
 
+################################# BST #################################
+
 """FB
 Find the minimum depth of a binary tree and return the path.
 """
@@ -214,6 +192,8 @@ root.right = Node(2)
 root.left.left = Node(3)
 assert min_depth(root, []) == (1, [0, 2]), min_depth(root, []) 
 
+################################# linked list #################################
+
 """
 Delete a node from a singly-linked list
 """
@@ -237,6 +217,8 @@ a.next = b
 b.next = c
 delete_node(b)
 assert (a.value,b.value) == ('A', 'C')
+
+################################# stack #################################
 
 """
 You want to be able to access the largest element in a stack
@@ -271,6 +253,8 @@ class MaxStack(object):
         return item
     def get_max(self):
         return self.maxes_stack.peek()
+
+################################# random #################################
 
 """
 You have a function rand5() that generates a random integer

@@ -304,7 +304,7 @@ def ways_make_amount(amount,lst):
 def test_wma():
     assert ways_make_amount(4,[1,2,3])==4
 
-################################# trie | dictionary #################################
+################################# trie | hash #################################
 
 """
 save large number of URLs in an efficient way

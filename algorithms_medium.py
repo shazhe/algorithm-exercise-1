@@ -5,68 +5,8 @@ Created on Thu Mar  8 18:57:47 2018
 
 @author: yutingyw
 """
-"""
-Find all combinations of an array.
-"""
 
-def combinations(arr, data, start, end, curr_idx, length, ret):
-    if curr_idx == length:
-        ret.append(data.copy())
-        return ret
-
-    i = start
-    while( i <= end and end - i + 1 >= length - curr_idx):
-        data[curr_idx] = arr[i]
-        ret = combinations(arr, data, i + 1, end, curr_idx + 1, length, ret)
-        i += 1
-    return ret
-
-def find_all_combinations(arr, n, r):
-    ret = combinations(arr, [0] * r, 0, n - 1, 0, r, [])
-    return ret
-
-ret = find_all_combinations([1, 2, 3, 4, 5], 5, 3)
-print(ret)
-
-"""
-Regular expression matching.
-"""
-def regex_match(s, p):
-    T = {} # shall not use array, as reference is easily changed unexpectedly [[False] * (len(p) + 1)] * (len(s) + 1)
-    T[(0, 0)] = True # '' matched with ''
-
-    for j in range(1, len(p) + 1):
-        if p[j - 1] == '*':
-            T[(0, j)] = T[(0, j - 1)] # only '*' matches with ''
-        else:
-            T[(0, j)] = False
-
-    for i in range(1, len(s) + 1):
-        T[(i, 0)] = False
-
-    for i in range(1, len(s) + 1):
-        for j in range(1, len(p) + 1):
-
-            if p[j - 1] == '*': # corresonds to j'th column of T
-                print('* i=%d j=%d T[(%d,%d)]=%d T[(%d,%d)]=%d' % (i, j, i, j-1, T[(i, j-1)], i-1, j, T[(i-1,j)]))
-                T[(i, j)] = T[(i, j - 1)] or T[(i - 1, j)]
-
-            elif p[j - 1] == '?' or p[j - 1] == s[i - 1]:
-                print('i=%d j=%d T[(%d,%d)]=%d' % (i, j, i-1, j-1, T[(i-1, j-1)]))
-                T[(i, j)] = T[(i - 1, j - 1)]
-
-            else:
-                print('false', i,j)
-                T[(i, j)] = False
-
-    print(T)
-    return T[(len(s), len(p))]
-
-assert regex_match('ba', 'ba') == True
-assert regex_match('baaabab', 'baaa?ab') == True
-assert regex_match('baaabab', 'ba*a?') == True
-assert regex_match('baaabab', 'a*ab') == False
-assert regex_match('baaabab', '*****ba*****ab') == True
+################################# pattern checking | recursion #################################
 
 """FB
 Given two arrays, return True if the words array is sorted according to the
@@ -97,6 +37,8 @@ words = ['cc','cb','bb','ac']
 assert sort_by_order(words, ['c','b','a']) == True
 assert sort_by_order(words, ['b','c','a']) == False
 assert sort_by_order(words, ['c','b']) == False
+
+################################# pattern combination | recursion #################################
 
 """FB
 Given a string of keys (can have different combinations of keys), and a
@@ -168,186 +110,201 @@ def decode_combinations(digits, prefix):
 assert decode_combinations('121', '') == ['ABA','AU','LA']
 assert decode_combinations('1234', '') == ['ABCD','AWD','LCD']
 
+################################# combination | recursion #################################
+
+"""SP
+Find all subarray-combinations of an array.
+"""
+def combinations(arr, data, start, end, curr_idx, length, ret):
+    if curr_idx == length:
+        ret.append(data.copy())
+        return ret
+
+    i = start
+    while( i <= end and end - i + 1 >= length - curr_idx):
+        data[curr_idx] = arr[i]
+        ret = combinations(arr, data, i + 1, end, curr_idx + 1, length, ret)
+        i += 1
+    return ret
+
+def find_all_combinations(arr, n, r):
+    ret = combinations(arr, [0] * r, 0, n - 1, 0, r, [])
+    return ret
+
+ret = find_all_combinations([1, 2, 3, 4, 5], 5, 3)
+print(ret)
+
+################################# permutation | recursion #################################
+
+"""
+return all permutations of a string (no duplicates in it)
+"""
+def string_permutations(string):
+    if len(string)<=1:
+        return set([string])
+    perm = string_permutations(string[:-1])
+    allperm = set()
+    for p in perm:
+        for i in range(len(string)):
+            allperm.add(p[:i]+string[-1]+p[i:])
+    return allperm
+
+assert string_permutations('cat')==\
+    set(['cat','cta','atc','act','tac','tca'])
+
+################################# pattern checking | dynamic programming #################################
+
+"""SP
+Regular expression matching.
+"""
+def regex_match(s, p):
+    T = {} # shall not use array, as reference is easily changed unexpectedly [[False] * (len(p) + 1)] * (len(s) + 1)
+    T[(0, 0)] = True # '' matched with ''
+
+    for j in range(1, len(p) + 1):
+        if p[j - 1] == '*':
+            T[(0, j)] = T[(0, j - 1)] # only '*' matches with ''
+        else:
+            T[(0, j)] = False
+
+    for i in range(1, len(s) + 1):
+        T[(i, 0)] = False
+
+    for i in range(1, len(s) + 1):
+        for j in range(1, len(p) + 1):
+
+            if p[j - 1] == '*': # corresonds to j'th column of T
+                #print('* i=%d j=%d T[(%d,%d)]=%d T[(%d,%d)]=%d' % (i, j, i, j-1, T[(i, j-1)], i-1, j, T[(i-1,j)]))
+                T[(i, j)] = T[(i, j - 1)] or T[(i - 1, j)]
+
+            elif p[j - 1] == '?' or p[j - 1] == s[i - 1]:
+                #print('i=%d j=%d T[(%d,%d)]=%d' % (i, j, i-1, j-1, T[(i-1, j-1)]))
+                T[(i, j)] = T[(i - 1, j - 1)]
+
+            else:
+                #print('false', i,j)
+                T[(i, j)] = False
+
+    #print(T)
+    return T[(len(s), len(p))]
+
+assert regex_match('ba', 'ba') == True
+assert regex_match('baaabab', 'baaa?ab') == True
+assert regex_match('baaabab', 'ba*a?') == True
+assert regex_match('baaabab', 'a*ab') == False
+assert regex_match('baaabab', '*****ba*****ab') == True
+
+################################# palindrome checking | dynamic programming #################################
+
+"""
+Find the longest common subsequence.
+"""
+def lcs(X, Y):
+    m = len(X)
+    n = len(Y)
+    memo = [[None] * (n+1) for _ in range(m+1)]
+    for i in range(m+1):
+        for j in range(n+1):
+            if i == 0 or j == 0:
+                memo[i][j] = ''
+            elif X[i-1] == Y[j-1]:
+                memo[i][j] = memo[i-1][j-1] + X[i-1]
+            elif len(memo[i-1][j]) > len(memo[i][j-1]):
+                memo[i][j] = memo[i-1][j]
+            else:
+                memo[i][j] = memo[i][j-1]
+    return memo[m][n]
+
+assert lcs('AGGTAB', 'GXTXAYB') == 'GTAB'
+
 """FB
-Construct binary tree from given inorder and preorder traversal lists.
+Determine if a string is k-palindrome, i.e. palindrome upon removing at most
+k characters.
 """
-class Node(object):
-    def __init__(self):
-        self.value = None
-        self.left = None
-        self.right = None
+def is_k_palindrome(string, k):
+    reverse = string[::-1]
+    s = lcs(string, reverse)
+    return len(string) - len(s) <= k
 
-def construct_bt(root, inorder):
-    if len(construct_bt.preorder) == 0:
-        return
-    if len(inorder) == 0:
-        return
-    value = construct_bt.preorder.popleft()
-    root.value = value
-    print(value)
-    print('inorder ', inorder)
-    print('preorder ', construct_bt.preorder)
-    inorder_index = inorder.index(value)
-    print('inorder_index ', inorder_index)
-    if inorder_index > 0:
-        root.left = Node()
-        root.right = Node()
-        print('left inorder ', inorder[:inorder_index])
-        print('right inorder ', inorder[(inorder_index+1):])
-        construct_bt(root.left, inorder[:inorder_index])
-        construct_bt(root.right, inorder[(inorder_index+1):])
-    else:
-        root.right = Node()
-        print('right inorder ', inorder[1:])
-        construct_bt(root.right, inorder[1:])
+assert is_k_palindrome('acdcb', 2)
+assert is_k_palindrome('acdcb', 1) == False
 
-def inorder_lst(root):
-    if not root:
-        return []
-    return inorder_lst(root.left) + [root.value] + inorder_lst(root.right)
+################################# palindrome combination | dynamic programming #################################
 
-def preorder_lst(root):
-    if not root:
-        return []
-    return [root.value] + preorder_lst(root.left) + preorder_lst(root.right)
-
-def test_cb():    
-    from collections import deque
-    inorder = ['D','B','E','A','F','C']
-    preorder = deque(['A','B','D','E','C','F'])
-    root = Node()
-    construct_bt.preorder = preorder
-    construct_bt(root, inorder)
-    assert inorder_lst(root) == ['D', None, 'B', 'E', None, 'A', 'F', None, 'C', None]
-    assert preorder_lst(root) == ['A', 'B', 'D', None, 'E', None, 'C', 'F', None, None]
-
+"""SP
+Count all combinations of substring-palindromes of a string.
 """
-A tree is "superbalanced" if the difference between the
-depths of any two leaf nodes is no greater than one
-"""
-def is_balanced_dfs(root):
-    if root==None:
-        return True
-    depths = []
-    stacks = [(root,0)]
-    while len(stacks)>0:
-        node,depth = stacks.pop()
-        if not node.left and not node.right:
-            if depth not in depths:
-                depths.append(depth)
-            if len(depths)>2:
-                return False
-            if len(depths)==2 and abs(depths[0]-depths[1])>1:
-                return False
-        else:
-            if node.left:
-                stacks.append((node.left,depth+1))
-            if node.right:
-                stacks.append((node.right,depth+1))
-    return True
+def substring_palindromes(s):
+    is_pal = {}
+    n_pal = {}
+    n = len(s)
 
-def is_balanced_bfs(root):
-    from collections import deque
-    if root==None:
-        return True
-    depths = []
-    queue = deque([(root,0)])
-    while len(queue)>0:
-        node,depth = queue.popleft()
-        if not node.left and not node.right:
-            if depth not in depths:
-                depths.append(depth)
-            if len(depths)>2:
-                return False
-            if len(depths)==2 and abs(depths[0]-depths[1])>1:
-                return False
-        else:
-            if node.left:
-                queue.append((node.left,depth+1))
-            if node.right:
-                queue.append((node.right,depth+1))
-    return True
+    for i in range(n):
+        for j in range(n):
+            if i == j:
+                is_pal[(i, j)] = True # a single char is considered as a palindrome
+                n_pal[(i, j)] = 1 # the number of palindromes at i is 1
+            elif j == i + 1:
+                if s[i] == s[j]:
+                    is_pal[(i, j)] = True # adjacent same chars is a palindrome
+                    n_pal[(i, j)] = 1 # the number of palindromes (not substring-palindromes) of s[i]s[i+1] is 1
+                else:
+                    is_pal[(i, j)] = False # initialize to false
+                    n_pal[(i, j)] = 0
+            else:
+                is_pal[(i, j)] = False # initialize to false
+                n_pal[(i, j)] = 0
+
+    print(n_pal[(0, 1)])
+    for length in range(1, n): # length of palindrome
+        for i in range(n - length):
+            j = i + length # j > i
+
+            if (s[i] == s[j]) and (is_pal[i + 1, j - 1]): # s[i+1]...s[j-1] is a palindrome
+                is_pal[(i, j)] = True
+
+            if is_pal[(i, j)]:
+                n_pal[(i, j)] = n_pal[(i, j - 1)] + n_pal[(i + 1, j)] + 1 - n_pal[(i + 1, j - 1)]
+            else:
+                n_pal[(i, j)] = n_pal[(i, j - 1)] + n_pal[(i + 1, j)] - n_pal[(i + 1, j - 1)]
+    return n_pal[(0, n - 1)]
+
+assert substring_palindromes('aaa') == 6
+assert substring_palindromes('tabacocab') == len('tabacocab') + 4
+
+################################# dynamic programming #################################
 
 """
-Construct balanced bst from sorted list.
+computes the number of ways to make the amount of money
+with coins of the available denominations
 """
-def bst_from_sorted(root, lst):
-    if not lst:
-        return
-    mid = len(lst) // 2
-    root.value = lst[mid]
-    print(mid, root.value)
-    if mid > 0:
-        root.left = Node()
-        bst_from_sorted(root.left, lst[:mid])
-    if mid < len(lst) - 1:
-        root.right = Node()
-        bst_from_sorted(root.right, lst[(mid+1):])
+memo={}
+def ways_make_amount(amount,lst):
+    memo_key = (amount,len(lst))
+    if memo_key in memo:
+        print('grabbing '+str(memo_key))
+        return memo[memo_key]
 
-def tree_lst(root, left_space, right_space):
-    if not root:
-        return ' '*left_space + '*' + ' '*right_space
-    if not root.value:
-        root.value = '*'
-    lst = tree_lst(root.left, left_space, right_space + 2) + str(root.value) + \
-                  tree_lst(root.right, left_space + 2, right_space)
-    print(lst)
-    return
+    if amount==0:
+        return 1
+    if amount<0:
+        return 0
+    if lst==[]:
+        return 0
 
-def test_bfs():
-    root = Node()
-    bst_from_sorted(root, [1,2,3,4,5,6,7])
-    assert inorder_lst(root) == [1, 2, 3, 4, 5, 6,7]
-    print(preorder_lst(root))
-    tree_lst(root, 1, 1)
-    return root
+    n_ways = 0
+    while amount>=0:
+        print('looping with '+str(amount)+' and '+str(lst[1:]))
+        n_ways += ways_make_amount(amount,lst[1:])
+        print('deducting '+str(lst[0])+' from '+str(amount))
+        amount -= lst[0]
+    memo[memo_key] = n_ways
+    return n_ways
 
-"""
-check if a binary tree is a BST
-"""
-def is_bst(root):
-    if root==None:
-        return True
-    stacks = [(root,float('-inf'),float('inf'))]
-    while len(stacks):
-        node,low,up = stacks.pop()
-        if node.val<=low or node.val>=up:
-            return False
-        else:
-            if node.left:
-                stacks.append((node.left,low,node.val))
-            if node.right:
-                stacks.append((node.right,node.val,up))
-    return True
+def test_wma():
+    assert ways_make_amount(4,[1,2,3])==4
 
-def test_ib():
-    class BinaryTreeNode(object):
-        def __init__(self, value):
-            self.val = value
-            self.left  = None
-            self.right = None
-
-        def insert_left(self, value):
-            self.left = BinaryTreeNode(value)
-            return self.left
-
-        def insert_right(self, value):
-            self.right = BinaryTreeNode(value)
-            return self.right
-
-    t0 = BinaryTreeNode(10)
-    t00 = t0.insert_left(5)
-    t01 = t0.insert_right(15)
-    t010 = t01.insert_left(12)
-    t010.insert_right(14)
-    assert is_balanced_dfs(t0)==False
-    assert is_balanced_dfs(t01)==True
-    assert is_balanced_bfs(t0)==False
-    assert is_balanced_bfs(t01)==True
-    assert is_bst(t0)==True
-
-    t00.insert_right(13)
-    assert is_bst(t0)==False
+################################# trie | dictionary #################################
 
 """
 save large number of URLs in an efficient way
@@ -401,6 +358,8 @@ def common_prefix(lst):
 
 assert common_prefix(['abcde', 'abcre', 'abdde']) == 'ab'
 assert common_prefix(['abcde', 'abcdefg', 'abcdefgh']) == 'abcde'
+
+################################# trie | dynamic programming #################################
 
 """FB
 Given a dictionary and a M x N board where every cell has one character. 
@@ -458,263 +417,192 @@ def test_sw():
                 found += search_word(trie[c], i, j, visited, c, boggle)
     assert found == ['GEEKS', 'QUIZ']
 
-"""
-Find the longest common subsequence.
-"""
-def lcs(X, Y):
-    m = len(X)
-    n = len(Y)
-    memo = [[None] * (n+1) for _ in range(m+1)]
-    for i in range(m+1):
-        for j in range(n+1):
-            if i == 0 or j == 0:
-                memo[i][j] = ''
-            elif X[i-1] == Y[j-1]:
-                memo[i][j] = memo[i-1][j-1] + X[i-1]
-            elif len(memo[i-1][j]) > len(memo[i][j-1]):
-                memo[i][j] = memo[i-1][j]
-            else:
-                memo[i][j] = memo[i][j-1]
-    return memo[m][n]
-
-assert lcs('AGGTAB', 'GXTXAYB') == 'GTAB'
+################################# BST construction | recursion #################################
 
 """FB
-Determine if a string is k-palindrome, i.e. palindrome upon removing at most
-k characters.
+Construct binary tree from given inorder and preorder traversal lists.
 """
-def is_k_palindrome(string, k):
-    reverse = string[::-1]
-    s = lcs(string, reverse)
-    return len(string) - len(s) <= k
+class Node(object):
+    def __init__(self):
+        self.value = None
+        self.left = None
+        self.right = None
 
-assert is_k_palindrome('acdcb', 2)
-assert is_k_palindrome('acdcb', 1) == False
+def construct_bt(root, inorder):
+    if len(construct_bt.preorder) == 0:
+        return
+    if len(inorder) == 0:
+        return
+    value = construct_bt.preorder.popleft()
+    root.value = value
+    print(value)
+    print('inorder ', inorder)
+    print('preorder ', construct_bt.preorder)
+    inorder_index = inorder.index(value)
+    print('inorder_index ', inorder_index)
+    if inorder_index > 0:
+        root.left = Node()
+        root.right = Node()
+        print('left inorder ', inorder[:inorder_index])
+        print('right inorder ', inorder[(inorder_index+1):])
+        construct_bt(root.left, inorder[:inorder_index])
+        construct_bt(root.right, inorder[(inorder_index+1):])
+    else:
+        root.right = Node()
+        print('right inorder ', inorder[1:])
+        construct_bt(root.right, inorder[1:])
+
+def inorder_lst(root):
+    if not root:
+        return []
+    return inorder_lst(root.left) + [root.value] + inorder_lst(root.right)
+
+def preorder_lst(root):
+    if not root:
+        return []
+    return [root.value] + preorder_lst(root.left) + preorder_lst(root.right)
+
+def test_cb():
+    from collections import deque
+    inorder = ['D','B','E','A','F','C']
+    preorder = deque(['A','B','D','E','C','F'])
+    root = Node()
+    construct_bt.preorder = preorder
+    construct_bt(root, inorder)
+    assert inorder_lst(root) == ['D', None, 'B', 'E', None, 'A', 'F', None, 'C', None]
+    assert preorder_lst(root) == ['A', 'B', 'D', None, 'E', None, 'C', 'F', None, None]
 
 """
-computes the number of ways to make the amount of money
-with coins of the available denominations
+Construct balanced bst from sorted list.
 """
-memo={}
-def ways_make_amount(amount,lst):
-    memo_key = (amount,len(lst))
-    if memo_key in memo:
-        print('grabbing '+str(memo_key))
-        return memo[memo_key]
+def bst_from_sorted(root, lst):
+    if not lst:
+        return
+    mid = len(lst) // 2
+    root.value = lst[mid]
+    print(mid, root.value)
+    if mid > 0:
+        root.left = Node()
+        bst_from_sorted(root.left, lst[:mid])
+    if mid < len(lst) - 1:
+        root.right = Node()
+        bst_from_sorted(root.right, lst[(mid+1):])
 
-    if amount==0:
-        return 1
-    if amount<0:
-        return 0
-    if lst==[]:
-        return 0
+def tree_lst(root, left_space, right_space):
+    if not root:
+        return ' '*left_space + '*' + ' '*right_space
+    if not root.value:
+        root.value = '*'
+    lst = tree_lst(root.left, left_space, right_space + 2) + str(root.value) + \
+                  tree_lst(root.right, left_space + 2, right_space)
+    print(lst)
+    return
 
-    n_ways = 0
-    while amount>=0:
-        print('looping with '+str(amount)+' and '+str(lst[1:]))
-        n_ways += ways_make_amount(amount,lst[1:])
-        print('deducting '+str(lst[0])+' from '+str(amount))
-        amount -= lst[0]
-    memo[memo_key] = n_ways
-    return n_ways
+def test_bfs():
+    root = Node()
+    bst_from_sorted(root, [1,2,3,4,5,6,7])
+    assert inorder_lst(root) == [1, 2, 3, 4, 5, 6,7]
+    print(preorder_lst(root))
+    tree_lst(root, 1, 1)
+    return root
 
-def test_wma():
-    assert ways_make_amount(4,[1,2,3])==4
+################################# BST checking | stack #################################
 
 """
-Find the number of contiguous subarrays with given sum.
+check if a binary tree is a BST
 """
-def subarray_given_sum(lst, k):
-    s = 0
-    dic = {0: 1}
-    count = 0
-    for n in lst:
-        s += n
-        if s - k in dic:
-            print(s, s-k, count, dic[s-k])
-            count += dic[s - k]
-            print(count)
-
-        if s not in dic:
-            dic[s] = 1
+def is_bst(root):
+    if root==None:
+        return True
+    stacks = [(root,float('-inf'),float('inf'))]
+    while len(stacks):
+        node,low,up = stacks.pop()
+        if node.val<=low or node.val>=up:
+            return False
         else:
-            dic[s] += 1
-    return count
+            if node.left:
+                stacks.append((node.left,low,node.val))
+            if node.right:
+                stacks.append((node.right,node.val,up))
+    return True
 
-assert subarray_given_sum([1, -1, 1], 2) == 0, subarray_given_sum([1, -1, 1], 2)
-assert subarray_given_sum([1, -1, 1, 1], 2) == 2, subarray_given_sum([1, -1, 1, 1], 2)
-assert subarray_given_sum([1, -1, 1, 1, 1, -1, 2], 2) == 8, subarray_given_sum([1, -1, 1, 1, 1, -1, 2], 2)
+def test_ib():
+    class BinaryTreeNode(object):
+        def __init__(self, value):
+            self.val = value
+            self.left  = None
+            self.right = None
 
-"""FB
-Find positive subarray with given sum.
+        def insert_left(self, value):
+            self.left = BinaryTreeNode(value)
+            return self.left
+
+        def insert_right(self, value):
+            self.right = BinaryTreeNode(value)
+            return self.right
+
+    t0 = BinaryTreeNode(10)
+    t00 = t0.insert_left(5)
+    t01 = t0.insert_right(15)
+    t010 = t01.insert_left(12)
+    t010.insert_right(14)
+    assert is_balanced_dfs(t0)==False
+    assert is_balanced_dfs(t01)==True
+    assert is_balanced_bfs(t0)==False
+    assert is_balanced_bfs(t01)==True
+    assert is_bst(t0)==True
+
+    t00.insert_right(13)
+    assert is_bst(t0)==False
+
 """
-def psubarray_given_sum(lst, amt):
-    curr_sum = 0
-    start = 0
-    for i in range(len(lst)):
-        curr_sum += lst[i]
-        while (curr_sum > amt) and (start < i):
-            curr_sum -= lst[start]
-            start += 1
-        if curr_sum == amt:
-            return start, i
-    return -1
-
-assert psubarray_given_sum([1, 4, 20, 3, 10, 5], 33) == (2, 4)
-assert psubarray_given_sum([1, 4, 0, 0, 3, 10, 5], 7) == (1, 4)
-assert psubarray_given_sum([1, 4], 0) == -1
-
+A tree is "superbalanced" if the difference between the
+depths of any two leaf nodes is no greater than one
 """
-Largest sum of contiguous subarray.
-"""
-def subarray_max_sum(lst):
-    max_sum = 0
-    max_start = 0
-    max_end = 0
-    curr_sum = 0
-    curr_start = 0
-    for i in range(len(lst)):
-        if curr_sum < 0:
-            curr_sum = lst[i]
-            curr_start = i
+def is_balanced_dfs(root):
+    if root==None:
+        return True
+    depths = []
+    stacks = [(root,0)]
+    while len(stacks)>0:
+        node,depth = stacks.pop()
+        if not node.left and not node.right:
+            if depth not in depths:
+                depths.append(depth)
+            if len(depths)>2:
+                return False
+            if len(depths)==2 and abs(depths[0]-depths[1])>1:
+                return False
         else:
-            curr_sum += lst[i]
-        if max_sum < curr_sum:
-            max_sum = curr_sum
-            max_start = curr_start
-            max_end = i
-    return max_sum, max_start, max_end
+            if node.left:
+                stacks.append((node.left,depth+1))
+            if node.right:
+                stacks.append((node.right,depth+1))
+    return True
 
-    # version 2
-    sliding_sum, max_sum = 0, 0
-    sliding_start, max_start, max_end = 0, 0, 0
-    for sliding_end in range(len(lst)):
-        sliding_sum += lst[sliding_end]
-        if sliding_sum < 0:
-            sliding_sum = 0
-            sliding_start = sliding_end + 1
-        if sliding_sum > max_sum:
-            max_sum = sliding_sum
-            max_start = sliding_start
-            max_end = sliding_end
-    return max_sum, max_start, max_end
+def is_balanced_bfs(root):
+    from collections import deque
+    if root==None:
+        return True
+    depths = []
+    queue = deque([(root,0)])
+    while len(queue)>0:
+        node,depth = queue.popleft()
+        if not node.left and not node.right:
+            if depth not in depths:
+                depths.append(depth)
+            if len(depths)>2:
+                return False
+            if len(depths)==2 and abs(depths[0]-depths[1])>1:
+                return False
+        else:
+            if node.left:
+                queue.append((node.left,depth+1))
+            if node.right:
+                queue.append((node.right,depth+1))
+    return True
 
-assert subarray_max_sum([-2, -3, 4, -1, -2, 1, 5, -3]) == (7, 2, 6)
-
-"""
-Largest sum of k contiguous subarray.
-"""
-def k_subarray_max_sum(lst, k):
-    assert len(lst) >= k
-    max_sum = 0
-    max_start = 0
-    max_end = 0
-    curr_sum = sum(lst[:k])
-    for i in range(k, len(lst)):
-        curr_sum += lst[i]
-        curr_sum -= lst[i - k]
-        if max_sum < curr_sum:
-            max_sum = curr_sum
-            max_start = i - k + 1
-            max_end = i
-    return max_sum, max_start, max_end
-
-    # version 2
-    n = len(lst)
-    sliding_start, max_start, max_end = 0, 0, k-1
-    sliding_sum = sum(lst[:k])
-    max_sum = sliding_sum
-    for sliding_end in range(k, n):
-        sliding_sum += lst[sliding_end] - lst[sliding_start]
-        sliding_start += 1
-        if sliding_end > max_sum:
-            max_sum = sliding_sum
-            max_start = sliding_start
-            max_end = sliding_end
-    return max_sum, max_start, max_end
-
-assert k_subarray_max_sum([1, 2, 3, 1, 4, 5, 2, 3, 6], 3) == (11, 4, 6), k_subarray_max_sum([1, 2, 3, 1, 4, 5, 2, 3, 6], 3)
-
-"""FB
-Given an array and a number k, find the largest sum of the subarray containing 
-at least k numbers. It may be assumed that the size of array is at least k.
-"""
-def greaterk_subarray_max_sum(lst, k):
-    running_sum = sum(lst[:k])
-    max_sum = running_sum
-    max_start = 0
-    max_end = k
-    start = 0
-    for end in range(k, len(lst)):
-        running_sum += lst[end]
-        adjusted = False
-        while (start <= end - k + 1):
-            if max_sum < running_sum:
-                max_sum = running_sum
-                max_start = start
-                max_end = end
-            running_sum -= lst[start]
-            start += 1
-            adjusted = True
-        if adjusted:
-            start -= 1
-            running_sum += lst[start]
-        end += 1
-    return [lst[i] for i in range(max_start, max_end+1)]
-
-#    running_sum = sum(lst[:k])
-#    max_sum = running_sum
-#    max_start = 0
-#    max_end = k
-#    start = 0
-#    for end in range(k, len(lst)):
-#        adjusted = False
-#        while (running_sum <= max_sum) and (start <= end - k + 1):
-#            running_sum -= lst[start]
-#            start += 1
-#            adjusted = True
-#        if adjusted:
-#            start -= 1
-#            running_sum += lst[start]
-#        if running_sum > max_sum:
-#            max_start = start
-#            max_end = end
-#            max_sum = running_sum
-#        end += 1
-#    return [lst[i] for i in range(max_start, max_end+1)]
-
-def test_gsms():
-    assert greaterk_subarray_max_sum([-4, -2, 1, -3], 2) == [-2, 1]
-    print(greaterk_subarray_max_sum([-4, 1, 1, -1, 1, 1, 1, 1], 3) )
-#        == [1, 1, -1, 1, 1, 1, 1]
-
-"""FB
-Find the smallest subarray with sum greater than x.
-"""
-def min_subarray_greaterx_sum(lst, x):
-    running_sum = 0
-    start = 0
-    min_start = 0
-    min_end = len(lst)
-    for end in range(len(lst)):
-        running_sum += lst[end]
-        subtracted = False
-        while (running_sum > x) and (start <= end):
-            if min_end-min_start > end-start:
-                min_end = end
-                min_start = start
-            running_sum -= lst[start]
-            start += 1
-            subtracted = True
-        if subtracted:
-            start -= 1
-            running_sum += lst[start]
-        end += 1
-    return [lst[i] for i in range(min_start, min_end+1)]
-
-def test_msgs():
-    assert min_subarray_greaterx_sum([1, 4, 45, 6, 0, 19], 51) == [4, 45, 6]
-    assert min_subarray_greaterx_sum([1, 10, 5, 2, 7], 9) == [10]
+################################# parenthesis | stack #################################
 
 """FB
 Balanced parentheses.
@@ -800,6 +688,224 @@ def is_valid(code):
 assert is_valid('(()[]') == False
 assert is_valid('(())[{}[]]') == True
 
+################################# contiguous sum | backtracking #################################
+
+"""SP
+Find max length of a contiguous subarray whose sum is at most k.
+"""
+def subarray_max_length(lst, k):
+    curr_sum = 0
+    curr_arr = []
+    cnt = 0
+    for n in lst:
+        curr_sum += n
+        curr_arr.append(n)
+        while curr_sum > k:
+            head = curr_arr.pop(0)
+            curr_sum -= head
+        cnt = max(cnt, len(curr_arr))
+    return cnt
+
+assert subarray_max_length([-1, 1, 3, 5, -1], 4) == 3
+assert subarray_max_length([-1, 1, 3, 5, -1], 8) == 5
+
+"""SP
+Find the number of contiguous subarrays with given sum.
+"""
+def subarray_given_sum(lst, k):
+    s = 0
+    dic = {0: 1}
+    count = 0
+    for n in lst:
+        s += n
+        if s - k in dic:
+            print(s, s-k, count, dic[s-k])
+            count += dic[s - k]
+            print(count)
+
+        if s not in dic:
+            dic[s] = 1
+        else:
+            dic[s] += 1
+    return count
+
+assert subarray_given_sum([1, -1, 1], 2) == 0, subarray_given_sum([1, -1, 1], 2)
+assert subarray_given_sum([1, -1, 1, 1], 2) == 2, subarray_given_sum([1, -1, 1, 1], 2)
+assert subarray_given_sum([1, -1, 1, 1, 1, -1, 2], 2) == 8, subarray_given_sum([1, -1, 1, 1, 1, -1, 2], 2)
+
+"""SP
+Largest sum of contiguous subarray.
+"""
+def subarray_max_sum(lst):
+    max_sum = 0
+    max_start = 0
+    max_end = 0
+    curr_sum = 0
+    curr_start = 0
+    for i in range(len(lst)):
+        if curr_sum < 0:
+            curr_sum = lst[i]
+            curr_start = i
+        else:
+            curr_sum += lst[i]
+        if max_sum < curr_sum:
+            max_sum = curr_sum
+            max_start = curr_start
+            max_end = i
+    return max_sum, max_start, max_end
+
+    # version 2
+    sliding_sum, max_sum = 0, 0
+    sliding_start, max_start, max_end = 0, 0, 0
+    for sliding_end in range(len(lst)):
+        sliding_sum += lst[sliding_end]
+        if sliding_sum < 0:
+            sliding_sum = 0
+            sliding_start = sliding_end + 1
+        if sliding_sum > max_sum:
+            max_sum = sliding_sum
+            max_start = sliding_start
+            max_end = sliding_end
+    return max_sum, max_start, max_end
+
+assert subarray_max_sum([-2, -3, 4, -1, -2, 1, 5, -3]) == (7, 2, 6)
+
+"""
+Largest sum of k contiguous subarray.
+"""
+def k_subarray_max_sum(lst, k):
+    assert len(lst) >= k
+    max_sum = 0
+    max_start = 0
+    max_end = 0
+    curr_sum = sum(lst[:k])
+    for i in range(k, len(lst)):
+        curr_sum += lst[i]
+        curr_sum -= lst[i - k]
+        if max_sum < curr_sum:
+            max_sum = curr_sum
+            max_start = i - k + 1
+            max_end = i
+    return max_sum, max_start, max_end
+
+    # version 2
+    n = len(lst)
+    sliding_start, max_start, max_end = 0, 0, k-1
+    sliding_sum = sum(lst[:k])
+    max_sum = sliding_sum
+    for sliding_end in range(k, n):
+        sliding_sum += lst[sliding_end] - lst[sliding_start]
+        sliding_start += 1
+        if sliding_end > max_sum:
+            max_sum = sliding_sum
+            max_start = sliding_start
+            max_end = sliding_end
+    return max_sum, max_start, max_end
+
+assert k_subarray_max_sum([1, 2, 3, 1, 4, 5, 2, 3, 6], 3) == (11, 4, 6), k_subarray_max_sum([1, 2, 3, 1, 4, 5, 2, 3, 6], 3)
+
+"""FB
+Find positive subarray with given sum.
+"""
+def psubarray_given_sum(lst, amt):
+    curr_sum = 0
+    start = 0
+    for i in range(len(lst)):
+        curr_sum += lst[i]
+        while (curr_sum > amt) and (start < i):
+            curr_sum -= lst[start]
+            start += 1
+        if curr_sum == amt:
+            return start, i
+    return -1
+
+assert psubarray_given_sum([1, 4, 20, 3, 10, 5], 33) == (2, 4)
+assert psubarray_given_sum([1, 4, 0, 0, 3, 10, 5], 7) == (1, 4)
+assert psubarray_given_sum([1, 4], 0) == -1
+
+"""FB
+Given an array and a number k, find the largest sum of the subarray containing 
+at least k numbers. It may be assumed that the size of array is at least k.
+"""
+def greaterk_subarray_max_sum(lst, k):
+    running_sum = sum(lst[:k])
+    max_sum = running_sum
+    max_start = 0
+    max_end = k
+    start = 0
+    for end in range(k, len(lst)):
+        running_sum += lst[end]
+        adjusted = False
+        while (start <= end - k + 1):
+            if max_sum < running_sum:
+                max_sum = running_sum
+                max_start = start
+                max_end = end
+            running_sum -= lst[start]
+            start += 1
+            adjusted = True
+        if adjusted:
+            start -= 1
+            running_sum += lst[start]
+        end += 1
+    return [lst[i] for i in range(max_start, max_end+1)]
+
+#    running_sum = sum(lst[:k])
+#    max_sum = running_sum
+#    max_start = 0
+#    max_end = k
+#    start = 0
+#    for end in range(k, len(lst)):
+#        adjusted = False
+#        while (running_sum <= max_sum) and (start <= end - k + 1):
+#            running_sum -= lst[start]
+#            start += 1
+#            adjusted = True
+#        if adjusted:
+#            start -= 1
+#            running_sum += lst[start]
+#        if running_sum > max_sum:
+#            max_start = start
+#            max_end = end
+#            max_sum = running_sum
+#        end += 1
+#    return [lst[i] for i in range(max_start, max_end+1)]
+
+def test_gsms():
+    assert greaterk_subarray_max_sum([-4, -2, 1, -3], 2) == [-2, 1]
+    print(greaterk_subarray_max_sum([-4, 1, 1, -1, 1, 1, 1, 1], 3) )
+#        == [1, 1, -1, 1, 1, 1, 1]
+
+"""FB
+Find the smallest subarray with sum greater than x.
+"""
+def min_subarray_greaterx_sum(lst, x):
+    running_sum = 0
+    start = 0
+    min_start = 0
+    min_end = len(lst)
+    for end in range(len(lst)):
+        running_sum += lst[end]
+        subtracted = False
+        while (running_sum > x) and (start <= end):
+            if min_end-min_start > end-start:
+                min_end = end
+                min_start = start
+            running_sum -= lst[start]
+            start += 1
+            subtracted = True
+        if subtracted:
+            start -= 1
+            running_sum += lst[start]
+        end += 1
+    return [lst[i] for i in range(min_start, min_end+1)]
+
+def test_msgs():
+    assert min_subarray_greaterx_sum([1, 4, 45, 6, 0, 19], 51) == [4, 45, 6]
+    assert min_subarray_greaterx_sum([1, 10, 5, 2, 7], 9) == [10]
+
+################################# backtracking #################################
+
 """
 takes stock_prices_yesterday and returns the best profit
 I could have made from 1 purchase and 1 sale of 1 Apple
@@ -874,6 +980,48 @@ def highest_3prod(lst):
 
 assert highest_3prod([1, 10, -5, 1, -100])==5000, highest_3prod([1, 10, -5, 1, -100])
 
+################################# permutation | in-place #################################
+
+"""
+reverse words in a string
+"""
+def reverse_words(string):
+    def reverse_char(w):
+        new = [None]*len(w)
+        n = len(w)-1
+        i = 0
+        while i<=n-i:
+            new[i],new[n-i] = w[n-i],w[i]
+            i += 1
+        return ''.join(new)
+    string = reverse_char(string)
+    lst = string.split()
+    for i in range(len(lst)):
+        lst[i] = reverse_char(lst[i])
+    return ' '.join(lst)
+
+assert reverse_words('secret team solving codes')== \
+                    'codes solving team secret'
+
+"""
+in-place shuffle a list uniformly, meaning each item in the
+original list must have the same probability of ending up in
+each spot in the final list
+"""
+def inplace_shuffle(lst):
+    import random
+    if len(lst)<=1:
+        return lst
+    for i in range(len(lst)-1):
+        random_index = random.randrange(i,len(lst))
+        if random_index!=i:
+            lst[i],lst[random_index]=lst[random_index],lst[i]
+    return lst
+
+print(inplace_shuffle([1,3,2,56,23,555]))
+
+################################# others #################################
+
 """
 Find the unique ID among other IDs which have 2 copies
 """
@@ -904,58 +1052,4 @@ def contain_cycle(node):
             slowrunner = slowrunner.next
         i +=1
     return False
-
-"""
-reverse words in a string
-"""
-def reverse_words(string):
-    def reverse_char(w):
-        new = [None]*len(w)
-        n = len(w)-1
-        i = 0
-        while i<=n-i:
-            new[i],new[n-i] = w[n-i],w[i]
-            i += 1
-        return ''.join(new)
-    string = reverse_char(string)
-    lst = string.split()
-    for i in range(len(lst)):
-        lst[i] = reverse_char(lst[i])
-    return ' '.join(lst)
-
-assert reverse_words('secret team solving codes')== \
-                    'codes solving team secret'
-
-"""
-return all permutations of a string (no duplicates in it)
-"""
-def string_permutations(string):
-    if len(string)<=1:
-        return set([string])
-    perm = string_permutations(string[:-1])
-    allperm = set()
-    for p in perm:
-        for i in range(len(string)):
-            allperm.add(p[:i]+string[-1]+p[i:])
-    return allperm
-
-assert string_permutations('cat')==\
-    set(['cat','cta','atc','act','tac','tca'])
-
-"""
-in-place shuffle a list uniformly, meaning each item in the
-original list must have the same probability of ending up in
-each spot in the final list
-"""
-def inplace_shuffle(lst):
-    import random
-    if len(lst)<=1:
-        return lst
-    for i in range(len(lst)-1):
-        random_index = random.randrange(i,len(lst))
-        if random_index!=i:
-            lst[i],lst[random_index]=lst[random_index],lst[i]
-    return lst
-
-print(inplace_shuffle([1,3,2,56,23,555]))
 

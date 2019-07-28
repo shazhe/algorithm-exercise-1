@@ -5,6 +5,28 @@ Created on Thu Mar  8 18:57:47 2018
 
 @author: yutingyw
 """
+"""
+Find all combinations of an array.
+"""
+
+def combinations(arr, data, start, end, curr_idx, length, ret):
+    if curr_idx == length:
+        ret.append(data.copy())
+        return ret
+
+    i = start
+    while( i <= end and end - i + 1 >= length - curr_idx):
+        data[curr_idx] = arr[i]
+        ret = combinations(arr, data, i + 1, end, curr_idx + 1, length, ret)
+        i += 1
+    return ret
+
+def find_all_combinations(arr, n, r):
+    ret = combinations(arr, [0] * r, 0, n - 1, 0, r, [])
+    return ret
+
+ret = find_all_combinations([1, 2, 3, 4, 5], 5, 3)
+print(ret)
 
 """
 Regular expression matching.

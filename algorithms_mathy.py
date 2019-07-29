@@ -186,7 +186,7 @@ assert fibonacci_sum(6, 2)
 assert fibonacci_sum(5, 3) == False
 assert fibonacci_sum(10059560, 4)
 
-################################# knapsack #################################
+################################# knapsack | dynamic programming #################################
 
 """
 0-1 knapsack problem: find maximum value that can be put in a knapsack of capacity W.
@@ -210,45 +210,288 @@ def knapsack(W, weights, values):
 assert knapsack(50, [10, 20, 30], [60, 100, 120]) == 220
 
 
-################################# maximum scores #################################
+################################# maximum value | analytic #################################
 
 """
-Step through an array of n numbers, with step size at most k. Collect score of the
-number stepped on. Find maximum score.
+Exchange apples for score. 1 apple + x cents = 1 score. 1 apple = y cents.
+Start with n apples m cents. Find maximum scores. Assume x any are non-negative integers.
 """
+def max_score_exchange_easy(n, m, x, y):
+    # optimal strategy: use N apples and N * x cents to exchange for N scores
+    # used n - N apples to exchange for y * (n - N) cents
+    # ensure enough cents: y * (n - N) + m >= N * x
+    return max([min((n * y + m) // (x + y), N) for N in range(n)])
+
+assert max_score_exchange_easy(4, 8, 4, 3) == 2
+
+# each subproblem is not visited twice so no need for dynamic programming actually; space matrix, inefficient
+def max_score_exchange_dp(n, m, x, y):
+    memo = {} # memo[(i, j)] = max scores start with i apples and j cents, 0<=i<=n, 0<=j<=m+y*n
+
+    for j in range(m + y * n + 1):
+        memo[(0, j)] = 0 # only cents cannot exchange for scores
+
+    for i in range(1, n + 1):
+        for j in range(m + y * n + 1):
+            #print(i, j)
+            #print(memo)
+
+            if j < x and i == 1:
+                #print(0)
+                memo[(i, j)] = 0 # only 1 apple cannot exchange for scores
+
+            elif j < x:
+                # more than 1 apples, not enough cents, exchange apple for cents first
+                max_value = 0
+                # exchange k apples to get y * k cents, 1<=k<=i-1
+                #print([(i - k, j + y * k) for k in range(1, i)])
+                for k in range(1, i):
+                    max_value = max(max_value, memo[(i - k, j + y * k)])
+                memo[(i, j)] = max_value
+
+            elif j >= x and i == 1:
+                # 1 apple with excess cents
+                memo[(i, j)] = 1
+
+            else:
+                # more than 1 apples and enough cents to start with for exchanging scores
+                max_value = 0
+                # exchange k apples + x * k cents for k scores, 0<=k<=i and x * k <= j
+                if x == 0:
+                    max_k = i
+                else:
+                    max_k = min(i, j // x)
+                #print([(i - k, j - x * k) for k in range(1, max_k + 1)])
+                for k in range(1, max_k + 1):
+                    max_value = max(max_value, k + memo[(i - k, j - x * k)])
+                memo[(i, j)] = max_value
+
+    return memo[(n, m)]
+
+assert max_score_exchange_dp(4, 8, 4, 3) == 2
+
+################################# maximum value minimum cost traversal | 1D | dynamic programming #################################
 
 """
-Exchange apples for scores. 1 apple + x cents = 1 score. 1 apple = y cents.
-Start with n apples m cents. Find maximum scores.
+Step through an array of n numbers, with step size at most m. Collect scores of the
+number stepped on. Find maximum scores.
 """
+# need dynamic programming because many subproblems are visited more than once
+def max_score_array(lst, max_step):
+    n = len(lst)
+    memo = {} # memo[(i, j)] = max scores given i items left in the lst, move by j step, i >= j > 0, invalid step still shown as j
 
+    for j in range(1, max_step + 1):
+        memo[(0, j)] = lst[-1]
 
-################################# minimum cost painting | 1D #################################
+    for i in range(1, n):
+        for j in range(1, max_step + 1):
+            print(i,j)
+            print(memo)
+
+            if i > j:
+                print([(i-j, k) for k in range(1, i - j + 1)])
+                memo[(i, j)] = lst[- i - 1] + max([memo[(i - j, k)] for k in range(1, max_step + 1)])
+
+            else: # step j exceeds lst, so stop at the end of the lst
+                print('exceed', lst[-i-1], lst[-1])
+                memo[(i, j)] = lst[- i - 1] + lst[-1]
+
+            print(memo[(i, j)])
+
+    return max([memo[(n - 1, j)] for j in range(1, max_step + 1)])
+
+assert max_score_array([10, 2, -10, 5, 20], 2) == 37
+assert max_score_array([3, 10, -20, -5], 1) == -12
+assert max_score_array([10, -20, -5], 2) == 5
 
 """
 Paint n houses in a row with m colors, adjacent ones with different colors.
-A cost (n x m) gives the cost of painting each color for each house. Find minimum cost.
+A cost matrix (n x m) gives the cost of painting each color for each house. Find minimum cost.
 """
+def min_cost_painting(costs):
+    n = len(costs)
+    m = len(costs[0])
+    memo = {} # memo[(i, j)] = min cost if painting house i with color j
 
-################################# minimum cost traversal | non-planar #################################
+    for j in range(m):
+        memo[(n - 1, j)] = costs[n - 1][j]
+
+    if n == 1:
+        return min([memo[(0, j)] for j in range(m)])
+
+    for i in range(n - 2, -1, -1):
+        for j in range(m):
+            # the next house cannot be painted with color j
+            memo[(i, j)] = costs[i][j] + min([memo[(i + 1, k)] for k in range(m) if k != j])
+
+    return min([memo[(0, j)] for j in range(m)])
+
+assert min_cost_painting([[1, 2, 2], [2, 2, 1], [2, 1, 2]]) == 3
+
+################################# maximum value minimum cost traversal | non-planar | depth-first search #################################
 
 """
-Given an adjacent matrix of directional traversal cost, and the original node.
-Find the minimum cost of travelling all nodes.
+Given an adjacent matrix of directional traversal cost, and the original node,
+find the minimum cost of traversing all nodes. Matrix: row outbound, column inbound.
 """
+# do not use dynamic programming to memorize min cost, because each subproblem with a new "start" node has independent solution
+# because with different "start" node, the paths of traversing a directed graph are different
+def min_cost_traversal(adjacent, visited, start):
+    print(visited, start)
 
-################################# minima height | 3D #################################
+    visited[start] = True # prevent looping back to the "start" node in the following recursion
+    min_cost = 0 # min cost of traversing starting from the "start" node (may not be able to traverse the whole graph in the end)
 
-"""
-Find minima of a matrix of values representing heigths on 2D.
-"""
+    outs = adjacent[start]
 
-################################# escape grid | 2D #################################
+    for i in range(len(outs)):
+        if outs[i] is not None:
+            if not visited.get(outs[i], False): # if "out" was previously visited then the paths steming from it would have been traversed and added to min_cost
+                min_cost += outs[i] + min_cost_traversal(adjacent, visited, i)[0]
+
+    if size(visited) == len(adjacent):
+        traversed = True
+    else:
+        traversed = False
+
+    visited[start] = False
+
+    return min_cost, traversed
+
+adjacent = [
+                [None, None, 122, None],
+                [None, None, None, 50],
+                [341, None, None, 205],
+                [456, None, 186, None]
+            ]
+assert min_cost_traversal(adjacent, {}, 1) == (50 + 456 + 122 + 205, True)
+
+################################# build graph from grid | 2D #################################
+
+def build_graph_from_grid(grid):
+    n = len(grid)
+    m = len(grid[0])
+    graph = {'b': []} # from boundary to nowhere (already escape!)
+
+    # build horizontal connections
+    for i in range(n):
+        prev = 'b' # boundary
+
+        for j in range(m):
+
+            if grid[i][j] == -1:
+                prev = 'h' # hole
+
+            if grid[i][j] == 1:
+                if prev == 'b':
+                    graph[(i, j)] = ['b'] # adjacent to the boundary
+                elif prev == 'h':
+                    graph[(i, j)] = [] # haven't seen adjacent vertex yet
+                elif isinstance(prev, tuple):
+                    graph[(i, j)] = [prev]
+                    graph[prev].append((i, j))
+                prev = (i, j)
+
+        if isinstance(prev, tuple):
+            graph[prev].append('b')
+
+    # now build verticle connections
+    # all (i, j) of 1's have been initialized in the graph
+    for j in range(m):
+        prev = 'b'
+
+        for i in range(n):
+
+            if grid[i][j] == -1:
+                prev = 'h'
+
+            if grid[i][j] == 1:
+                if prev == 'b':
+                    graph[(i, j)].append('b')
+                elif isinstance(prev, tuple):
+                    graph[(i, j)].append(prev)
+                    graph[prev].append((i, j))
+                prev = (i, j)
+
+        if isinstance(prev, tuple):
+            graph[prev].append('b')
+
+    return graph
+
+################################# check path between nodes | non-planar | depth-first search and dynamic programming #################################
 
 """
 Escape a square grid, with 0, 1, -1. On 1, can move 4 directions;
 on 0, through original direction; hit -1, game over. Given starting
 positions of me and a puppy to help (both on 1).
+
+"""
+def path_to_node(graph, memo, visited, start, end): # memo[node] = True if there is a path from node to the end
+
+    visited[start] = True # prevent falling into infinite loop -- when calling path_to_node, may loop back to start
+
+    if start in memo:
+        return memo[start]
+
+    if start == end:
+        memo[start] = True
+        return True
+
+    if start == 'b' and end != 'b':
+        memo[start] = False
+        return False # escape without seeing the "end" node
+
+    neighbours = graph[start]
+
+    print(start, end)
+    print(neighbours)
+
+    for node in neighbours:
+        if not visited.get(node, False):
+            if path_to_node(graph, memo, visited, node, end):
+                memo[start] = True
+                return True
+
+    visited[start] = False # set back to False so that this "start" node can be counted in other search not starting from the "start"
+
+    # if haven't returned True so far then there is no path to the end
+    memo[start] = False
+    print(memo)
+
+    return False
+
+def escape_grid_through_node(grid, start, node):
+    # build graph
+    graph = build_graph_from_grid(grid)
+    print(graph)
+
+    # path from start to node
+    start_to_node = path_to_node(graph, {}, {}, start, node)
+
+    # path from node to boundary
+    node_to_boundary = path_to_node(graph, {}, {}, node, 'b')
+
+    return start_to_node and node_to_boundary
+
+assert escape_grid_through_node(
+        [
+            [0,0,0,0,0,0,0],
+            [0,0,-1,0,0,0,0],
+            [0,0,1,-1,0,-1,0],
+            [-1,0,0,0,0,0,0],
+            [0,0,1,0,0,1,0],
+            [-1,0,-1,0,-1,0,0],
+            [0,0,0,0,0,0,0]
+        ],
+        (4, 2),
+        (2, 2)
+        ) == True
+
+################################# minima height | 3D #################################
+
+"""
+Find minima of a matrix of values representing heigths on 2D.
 """
 
 ################################# GCD #################################

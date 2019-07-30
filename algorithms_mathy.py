@@ -329,35 +329,43 @@ def min_cost_painting(costs):
 
 assert min_cost_painting([[1, 2, 2], [2, 2, 1], [2, 1, 2]]) == 3
 
-################################# maximum value minimum cost traversal | non-planar | depth-first search #################################
+################################# maximum value minimum cost traversal | non-planar | backtracking #################################
 
 """
 Given an adjacent matrix of directional traversal cost, and the original node,
 find the minimum cost of traversing all nodes. Matrix: row outbound, column inbound.
 """
-# do not use dynamic programming to memorize min cost, because each subproblem with a new "start" node has independent solution
-# because with different "start" node, the paths of traversing a directed graph are different
-def min_cost_traversal(adjacent, visited, start):
+# cannot use dynamic programming to memorize min cost: each subproblem with a new "start" node has independent solution
+# because with different "start" nodes, the paths of traversing a directed graph are different
+def min_cost_traversal(n, adjacent, visited, start): # n = len(adjacent), supply here so that don't need to recalculate in all recursions
     print(visited, start)
 
-    visited[start] = True # prevent looping back to the "start" node in the following recursion
-    min_cost = 0 # min cost of traversing starting from the "start" node (may not be able to traverse the whole graph in the end)
+    if start in visited:
+        print('this should not happen')
+        return 0
+
+    visited.append(start) # prevent looping back to the "start" node in the following recursion
 
     outs = adjacent[start]
+    outs = [out if out is not None else float('inf') for out in outs]
+    sort_outs = sorted((cost, i) for i, cost in enumerate(outs))
 
-    for i in range(len(outs)):
-        if outs[i] is not None:
-            if not visited.get(outs[i], False): # if "out" was previously visited then the paths steming from it would have been traversed and added to min_cost
-                min_cost += outs[i] + min_cost_traversal(adjacent, visited, i)[0]
+    min_cost = 0
 
-    if size(visited) == len(adjacent):
-        traversed = True
+    for cost, i in sort_outs:
+        if i not in visited and cost != float('inf'):
+            min_cost += cost + min_cost_traversal(n, adjacent, visited, i)
+
+    return min_cost
+
+def check_traversal(adjacent, start):
+    n = len(adjacent)
+    visited = []
+    min_cost = min_cost_traversal(n, adjacent, visited, start)
+    if len(visited) == n:
+        return min_cost
     else:
-        traversed = False
-
-    visited[start] = False
-
-    return min_cost, traversed
+        return None
 
 adjacent = [
                 [None, None, 122, None],
@@ -365,7 +373,7 @@ adjacent = [
                 [341, None, None, 205],
                 [456, None, 186, None]
             ]
-assert min_cost_traversal(adjacent, {}, 1) == (50 + 456 + 122 + 205, True)
+assert check_traversal(adjacent, 1) == 577
 
 ################################# build graph from grid | 2D #################################
 
@@ -488,12 +496,6 @@ assert escape_grid_through_node(
         (2, 2)
         ) == True
 
-################################# minima height | 3D #################################
-
-"""
-Find minima of a matrix of values representing heigths on 2D.
-"""
-
 ################################# GCD #################################
 
 """
@@ -528,10 +530,97 @@ Find minimum partition of an array such that each pair has gcd at most 1 inside 
 """
 Given n distinct lattice points, check if there are three in the same line.
 """
-def colinear(points):
-    assert len(points) >= 3
-    # TODO
+def overlap_tuples(lst): # given lst of tuples, check if exist two with overlapping elements
+    counts = {} # adjacency for each point of each tuple in the lst -- can derive the maximum set of points lying in the same line
+    flag = False
+    for p1, p2 in lst:
+        if p1 in counts:
+            flag = True # we can return True here if only need to check existence
+            counts[p1].append(p2)
+        else:
+            counts[p1] = [p2]
+        if p2 in counts:
+            flag = True # we can return True here if only need to check existence
+            counts[p2].append(p1)
+        else:
+            counts[p2] = [p1]
+    return flag, counts
 
-#assert colinear([(-1, -1), (0, 0), (1, 1)])
-#assert colinear([(-1, -1), (0, 0), (1, 2)]) == False
+def colinear(points):
+    n = len(points)
+    assert n >= 3
+
+    slopes = {}
+    for i in range(n - 1):
+        x, y = points[i]
+        for j in range(i + 1, n):
+            x1, y1 = points[j]
+            if x == x1:
+                slope = float('inf')
+            else:
+                slope = (y1 - y) / (x1 - x)
+            if slope not in slopes:
+                slopes[slope] = []
+            slopes[slope].append((points[i], points[j]))
+
+    for slope in slopes:
+        lst = slopes[slope]
+        print('slope:', slope)
+        print(lst)
+        flag, counts = overlap_tuples(lst)
+        print('flag', flag)
+        print('counts', counts)
+        if flag:
+            return True
+
+    return False
+
+assert colinear([(-1, -1), (0, 0), (1, 1)])
+assert colinear([(-1, -1), (0, 0), (1, 2)]) == False
+
+"""
+Find local minima of a matrix of values representing heigths on 2D.
+"""
+def local_minima(matrix):
+    n = len(matrix)
+    m = len(matrix[0])
+    loc_mins = []
+    for i in range(n):
+        for j in range(m):
+            curr = matrix[i][j]
+            matrix[i][j] = float('inf') # trick to avoid tedious case analysis
+            neighbour_min = min([
+                    matrix[max(0, i - 1)][max(0, j - 1)], # in case of saddle point need to compare with diagonal corners
+                    matrix[max(0, i - 1)][j],
+                    matrix[max(0, i - 1)][min(m - 1, j + 1)],
+                    matrix[i][max(0, j - 1)],
+                    matrix[i][min(m - 1, j + 1)],
+                    matrix[min(n - 1, i + 1)][max(0, j - 1)],
+                    matrix[min(n - 1, i + 1)][j],
+                    matrix[min(n - 1, i + 1)][min(m - 1, j + 1)]
+                    ])
+            if curr < neighbour_min:
+                loc_mins.append(curr)
+            matrix[i][j] = curr # reverse the trick
+
+    return sorted(loc_mins[:min(3, len(loc_mins))])
+
+assert local_minima([
+                        [5, 5, 5, 5, 5],
+                        [5, 1, 5, 5, 5],
+                        [5, 5, 5, 4, 5],
+                        [5, 5, 4, 2, 3],
+                        [0, 5, 5, 3, 4]
+                    ]) == [0, 1, 2]
+
+"""
+Find intersections between a ray and a 3D sphere (if any), and also their distances to the origin of the ray.
+"""
+
+
+"""
+Find integral point of a triangle, in or on the triangle with min sum to the vertices.
+"""
+
+
 

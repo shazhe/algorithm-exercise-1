@@ -272,6 +272,54 @@ def substring_palindromes(s):
 assert substring_palindromes('aaa') == 6
 assert substring_palindromes('tabacocab') == len('tabacocab') + 4
 
+################################# palindrome dates | greedy #################################
+
+"""
+Find all palindrome dates of the centery of the given year, can be 7-digits or 8-digits.
+"""
+def leap_year(year):
+    if year % 4 != 0:
+        return False
+    elif year % 100 != 0:
+        return True
+    elif year % 400 != 0:
+        return False
+    else:
+        return True
+
+def palindrome_dates(year):
+    start_year = (year // 100) * 100
+    end_year = start_year + 100
+
+    m_to_d = {1: 31, 2: 28, 3: 31, 4: 30, 5: 31, 6: 30, 7: 31, 8: 31, 9: 30, 10: 31, 11: 30, 12: 31}
+    count = 0
+
+    for y in range(start_year, end_year):
+        for m in range(1, 13):
+            n_d = m_to_d[m]
+            if m == 2 and leap_year(y):
+                n_d = 29
+            for d in range(1, n_d + 1):
+                if d < 10:
+                    s_d = '0' + str(d)
+                else:
+                    s_d = str(d)
+                if m < 10:
+                    digits7 = str(m) + s_d + str(y)
+                    if digits7 == digits7[::-1]:
+                        count += 1
+                    s_m = '0' + str(m)
+                else:
+                    s_m = str(m)
+                digits8 = s_m + s_d + str(y)
+                if digits8 == digits8[::-1]:
+                    count += 1
+    return count
+
+assert palindrome_dates(2016) == 38
+
+
+
 ################################# dynamic programming #################################
 
 """
@@ -689,6 +737,41 @@ assert is_valid('(()[]') == False
 assert is_valid('(())[{}[]]') == True
 
 ################################# contiguous sum | backtracking #################################
+
+"""AKN
+Find the continuous subarray whose sum is closest to k.
+"""
+def subarray_nearest_sum(lst, k):
+    curr_sum = 0
+    curr_start = 0
+    nearest_sum = 0
+    nearest_start = 0
+    nearest_end = 0
+
+    for i in range(len(lst)):
+        curr_sum += lst[i]
+        while curr_start < i:
+            if abs(curr_sum - lst[curr_start] - k) < abs(curr_sum - k):
+                curr_sum -= lst[curr_start]
+                curr_start += 1
+            else:
+                break
+        while curr_start > 0:
+            if abs(curr_sum + lst[curr_start - 1] - k) < abs(curr_sum - k):
+                curr_sum += lst[curr_start - 1]
+                curr_start -= 1
+            else:
+                break
+        if abs(curr_sum - k) < abs(nearest_sum - k):
+            nearest_sum = curr_sum
+            nearest_start = curr_start
+            nearest_end = i
+
+    return nearest_start, nearest_end
+
+assert subarray_nearest_sum([3, 4, 5, 6, 7], 14) == (1, 3)
+assert subarray_nearest_sum([3, 4, 5, 6, 7, -8, 1], 14) == (1, 5)
+assert subarray_nearest_sum([3, 4, 5, 6, 7, -6, 1, -3, 0], 14) == (1, 7)
 
 """SP
 Find max length of a contiguous subarray whose sum is at most k.

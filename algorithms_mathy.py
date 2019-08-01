@@ -522,8 +522,126 @@ def gcd_array(lst):
 assert gcd_array([2, 4, 6, 8, 16]) == 2
 
 """
-Find minimum partition of an array such that each pair has gcd at most 1 inside a group.
+Find all primes <= n. Sieve of Eratosthenes run time O(n * log(log(n))).
 """
+def sieveOfEratosthenes(n):
+    primes = [True for i in range(n + 1)]
+    p = 2
+    while p ** 2 <= n:
+        if primes[p]:
+            for i in range(p ** 2, n + 1, p):
+                primes[i] = False
+        p += 1
+    return [p for p in range(2, n + 1) if primes[p] == True]
+
+assert sieveOfEratosthenes(30) == [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
+
+"""
+Find minimum partition of an array such that each pair has gcd > 1 inside a group,
+i.e. in each partition, there is a common factor > 1 -- a common factor should be as small as possible
+so that it can be a common divisor of more numbers, to minimize the number of partitions.
+The GCD of three or more numbers equals the product of the prime factors common to all the numbers.
+So smallest possibleis are prime numbers.
+(It can also be calculated by repeatedly taking the GCDs of pairs of numbers.)
+"""
+import copy
+
+def min_partition_bipartite(left_to_right, right_to_left):
+    # left node to list of right nodes, vice versa
+    # thinking right nodes are primes, left nodes are nums in list
+
+    # base case
+    if len(right_to_left) == 0:
+        return len(left_to_right) # left node to empty list, i.e. itself is the only divisor
+
+    min_partition = float('inf')
+
+    # remove one of the prime from the bipartite graph, removing corresponding elements from dicts
+    # check which produce minimum partition
+    for p in right_to_left:
+        right_to_left_rm_p = copy.deepcopy(right_to_left)
+        left_to_right_rm_p = copy.deepcopy(left_to_right)
+        # remove p from prime to nums
+        left_nodes = right_to_left_rm_p.pop(p)
+        # remove all left nodes from left_to_right
+        # and remove all right nodes linking to these left nodes
+        for n in left_nodes:
+            print('left nodes', n)
+            # remove n from left_to_right
+            right_nodes = left_to_right_rm_p.pop(n)
+            print('right nodes', right_nodes)
+            print('right to left rm p', right_to_left_rm_p)
+            for right_node in right_nodes:
+                if right_node in right_to_left_rm_p:
+                    # remove n from list in right_to_left
+                    right_to_left_rm_p[right_node].remove(n)
+
+        # clear all the singletons on the right partite
+        for p in right_to_left_rm_p:
+            if right_to_left_rm_p[p] == []:
+                right_to_left_rm_p.pop(p)
+
+        num_partition = min_partition_bipartite(left_to_right_rm_p, right_to_left_rm_p)
+        if num_partition < min_partition:
+            min_partition = num_partition
+
+    return min_partition + 1
+
+def partition_gcd_greater1(lst):
+    max_n = max(lst)
+
+    # first find all primes <= max_n
+    primes = sieveOfEratosthenes(max_n)
+
+    # find mapping between prime and numbers in lst where prime is a divisor
+    # build a bipartite graph, as two dictionaries to arrays
+    prime_to_nums = {}
+    num_to_primes = {}
+
+    for p in primes:
+        print(p)
+        for n in lst:
+            if n % p == 0:
+                if n in num_to_primes:
+                    num_to_primes[n].add(p)
+                else:
+                    num_to_primes[n] = set([p])
+                if p in prime_to_nums:
+                    prime_to_nums[p].add(n)
+                else:
+                    prime_to_nums[p] = set([n])
+
+            print('prime to num', prime_to_nums)
+            print('num to prime', num_to_primes)
+
+    return min_partition_bipartite(num_to_primes, prime_to_nums)
+
+assert partition_gcd_greater1([2, 3, 2, 3, 3]) == 2
+
+"""
+Easier variation of above question:
+    each partition is a contiguous subarray, only need gcd(start of partition, end of partition) > 1.
+Contiguity makes problem much easier! Remember to check!
+"""
+def contiguous_partition_gcd_greater1(lst):
+    if len(lst) == 0:
+        return 0
+    if len(lst) == 1 and lst[0] > 1:
+        return 1
+
+    start = lst[0]
+    min_partition = 1
+
+    for n in lst[1:]:
+        curr_gcd = gcd(start, n)
+        if curr_gcd <= 1:
+            start = n
+            min_partition += 1
+    return min_partition
+
+assert partition_gcd_greater1([2, 3, 2, 3, 3]) == 2
+
+
 
 ################################# geometry #################################
 
@@ -615,12 +733,205 @@ assert local_minima([
 
 """
 Find intersections between a ray and a 3D sphere (if any), and also their distances to the origin of the ray.
+https://en.wikipedia.org/wiki/Line%E2%80%93sphere_intersection
+line: x = origin + d * dir
+sphere: ||x - center||**2 = r**2
 """
+def ray_sphere_intercept(centerx, centery, centerz, r, originx, originy, originz, dirx, diry, dirz):
+    import numpy as np
+    c = np.array((centerx, centery, centerz))
+    o = np.array((originx, originy, originz))
+    l = np.array((dirx, diry, dirz))
+    l = l / np.sqrt(np.dot(l, l))
+
+    # solve d for intersection points
+    b2_4ac = np.dot(l, o - c) ** 2 - (np.dot(o - c, o - c) - r**2)
+
+    if b2_4ac < 0:
+        return [0.]
+
+    elif b2_4ac == 0:
+        d = - np.dot(l, o - c)
+        intercept = o + d * l
+        print('1intercept', intercept)
+        print('d', d)
+
+        # check if intercept is in the same direction of the ray from its origin
+        if d >= 0:
+            distance = np.sqrt(np.dot(intercept - o, intercept - o))
+            return [distance]
+        else:
+            return [0.]
+
+    else:
+        d = - np.dot(l, o - c) + np.sqrt(b2_4ac)
+        d1 = - np.dot(l, o - c) - np.sqrt(b2_4ac)
+        intercept = o + d * l
+        intercept1 = o + d1 * l
+        distance = np.sqrt(np.dot(intercept - o, intercept - o))
+        distance1 = np.sqrt(np.dot(intercept1 - o, intercept1 - o))
+        print('2intercepts', intercept, intercept1)
+        print('d', d, d1)
+
+        if d >=0 and d1 >= 0:
+            return sorted([distance, distance1])
+        elif d >= 0:
+            print(intercept)
+            return [distance]
+        elif d1 >= 0:
+            print(intercept1)
+            return [distance1]
+        else:
+            return [0.]
+
+print(ray_sphere_intercept(1, 4, 0, 4, 1, 2, 3, 1, 0, -2))
+assert ray_sphere_intercept(0., 0., 0., 1.52, 3., 4., 3., 1., 1., 1.) == [0.]
+
+"""
+Find integral (i.e. integer) point of a triangle, in or on the triangle with min sum to the vertices.
+Not as hard as the Fermat-Torricelli point, where the integral condition was for the edges:
+https://www.mathblog.dk/project-euler-143-investigating-the-torricelli-point-of-a-triangle/
+https://projecteuler.net/problem=143
+"""
+def triangle_area(p1, p2, p3):
+    # https://www.gamedev.net/forums/topic/295943-is-this-a-better-point-in-triangle-test-2d/
+    det = (p1[0] - p3[0]) * (p2[1] - p3[1]) - (p2[0] - p3[0]) * (p1[1] - p3[1])
+    return det / 2.
+
+def point_in_triangle(p, p1, p2, p3): # check if p in triangle p1 p2 p3
+    p1p2p3 = triangle_area(p1, p2, p3)
+    pp1p2 = triangle_area(p, p1, p2)
+    pp2p3 = triangle_area(p, p2, p3)
+    pp1p3 = triangle_area(p, p1, p3)
+    if pp1p2 + pp2p3 + pp1p3 > p1p2p3:
+        return False
+    else:
+        return True
+
+def triangle_integral_point(p1, p2, p3):
+    import numpy as np
+    p1 = np.array(p1)
+    p2 = np.array(p2)
+    p3 = np.array(p3)
+
+    minx = min(p1[0], p2[0], p3[0])
+    maxx = max(p1[0], p2[0], p3[0])
+    miny = min(p1[1], p2[1], p3[1])
+    maxy = max(p1[1], p2[1], p3[1])
+
+    int_pts = []
+
+    for x in range(int(minx), int(maxx) + 1):
+        for y in range(int(miny), int(maxy) + 1):
+            if point_in_triangle((x,y), p1, p2, p3):
+                int_pts.append(np.array((x,y)))
+
+    min_dist = float('inf')
+    min_point = None
+
+    for p in int_pts:
+        distSqr = np.dot(p - p1, p - p1) + np.dot(p - p2, p - p2) + np.dot(p - p3, p - p3)
+        if distSqr < min_dist:
+            min_dist = distSqr
+            min_point = p
+        elif distSqr == min_dist:
+            if min_point[0] > p[0]:
+                min_dist = distSqr
+                min_point = p
+            elif min_point[0] == p[0] and min_point[1] > p[1]:
+                min_dist = distSqr
+                min_point = p
+
+    return list(min_point)
+
+assert triangle_integral_point((0., 0.), (1., 0.), (1., 1.)) == [1, 0]
+
+################################# trading #################################
+
+"""
+Find the cheapest hedge.
+"""
+import math
+
+def normal_cdf(x):
+    if abs(x) > 7:
+        return 1 if x > 0 else 0
+    temp = 27 * x / 294
+    temp = 111 * math.atanh(temp) - 358 * x / 23
+    temp = 1 + math.exp(temp)
+    return 1. / temp
+
+def option_price(stock_price, strike, option_type):
+    df = .994
+    F = stock_price / df
+    sigma = .18 # deannualized
+    dPlus = math.log(F / strike) / sigma + sigma / 2
+    nPlus = normal_cdf(dPlus)
+    nMinus = normal_cdf(dPlus - sigma)
+    if type in 'Cc':
+        return df * (F * nPlus - strike * nMinus)
+    else:
+        return df * (strike * (1 - nMinus) - F * (1 - nPlus))
+
+def get_delta(stock_price, strike, option_type):
+    df = .994
+    F = stock_price / df
+    sigma = .18 # deannualized
+    dPlus = math.log(F / strike) / sigma + sigma / 2
+    nPlus = normal_cdf(dPlus)
+    if type in 'Cc':
+        return nPlus
+    else:
+        return - (1 - nPlus)
+
+import numpy as np
+
+def get_market(stock_price, instruments, spread=2., quantity=500):
+    market = []
+    for instrument in instruments:
+        idx = instrument[0]
+        option_p = option_price(stock_price, instrument[1], instrument[2])
+        eps = np.random.uniform(-1., 1., 3)
+        spread_eps = spread + eps[0]
+        quantity_bid = quantity * (1 + eps[1])
+        quantity_ask = quantity * (1 + eps[2])
+        market.append((idx, option_p - spread_eps / 2., quantity_bid,
+            option_p + spread_eps / 2., quantity_ask))
+    return market
+
+def get_value(stock_price, instruments, portfolio):
+    value = 0
+    for inst, port in zip(instruments, portfolio):
+        option_p = option_price(stock_price, inst[1], inst[1])
+        value += option_p * port[1]
+    return value
+
+INSTRUMENTS = [(0, 100, 'C'), (1, 90, 'C'), (2, 80, 'C'), (3, 100, 'P'), (4, 90, 'P'), (5, 80, 'P')]
+PORTFOLIO = [(0, 2000), (1, 1000), (2, 0), (3, 0), (4, 2000), (5, 0)]
+LIMITS = [(0.01, -1000), (0.05, -3000), (0.1, -5000), (0.2, -8000),
+        (-0.01, -1000), (-0.05, -3000), (-0.1, -5000), (-0.2, -8000)]
+PRICE = 1000
+MARKET = get_market(stock_price, instruments)
+
+def cheapest_hedge(instruments, portfolio, limits, stock_price, market, memo):
+    current_value =  get_value(stock_price, instruments, portfolio)
+    not_exceed_limit = True
+
+    full_hedges = []
+    for limit in limits:
+        shock_value = get_value(stock_price * (1 + limit[0]), instruments, portfolio)
+        loss = shock_value - current_value
+        if loss <= limit[1]:
+            not_exceed_limit = False
+            full_hedge = 0
+            for inst, port in zip(instruments, portfolio):
+                delta = get_delta(stock_price, inst[1], inst[2]) * port[1]
+                change_value = delta * limit[0] * stock_price
+
+    if not_exceed_limit:
+        return None
 
 
-"""
-Find integral point of a triangle, in or on the triangle with min sum to the vertices.
-"""
 
 
 

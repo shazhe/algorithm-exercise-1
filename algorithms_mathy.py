@@ -868,7 +868,7 @@ def option_price(stock_price, strike, option_type):
     dPlus = math.log(F / strike) / sigma + sigma / 2
     nPlus = normal_cdf(dPlus)
     nMinus = normal_cdf(dPlus - sigma)
-    if type in 'Cc':
+    if option_type in 'Cc':
         return df * (F * nPlus - strike * nMinus)
     else:
         return df * (strike * (1 - nMinus) - F * (1 - nPlus))
@@ -879,7 +879,7 @@ def get_delta(stock_price, strike, option_type):
     sigma = .18 # deannualized
     dPlus = math.log(F / strike) / sigma + sigma / 2
     nPlus = normal_cdf(dPlus)
-    if type in 'Cc':
+    if option_type in 'Cc':
         return nPlus
     else:
         return - (1 - nPlus)
@@ -899,39 +899,265 @@ def get_market(stock_price, instruments, spread=2., quantity=500):
             option_p + spread_eps / 2., quantity_ask))
     return market
 
-def get_value(stock_price, instruments, portfolio):
-    value = 0
+def get_values(stock_price, instruments, portfolio):
+    values = []
     for inst, port in zip(instruments, portfolio):
-        option_p = option_price(stock_price, inst[1], inst[1])
-        value += option_p * port[1]
-    return value
+        option_p = option_price(stock_price, inst[1], inst[2])
+        values.append(option_p * port[1])
+    return values
 
 INSTRUMENTS = [(0, 100, 'C'), (1, 90, 'C'), (2, 80, 'C'), (3, 100, 'P'), (4, 90, 'P'), (5, 80, 'P')]
 PORTFOLIO = [(0, 2000), (1, 1000), (2, 0), (3, 0), (4, 2000), (5, 0)]
-LIMITS = [(0.01, -1000), (0.05, -3000), (0.1, -5000), (0.2, -8000),
-        (-0.01, -1000), (-0.05, -3000), (-0.1, -5000), (-0.2, -8000)]
-PRICE = 1000
-MARKET = get_market(stock_price, instruments)
+LIMITS = [(0.1, -500), (0.2, -800), (0.3, -1000), (0.4, -1200),
+        (-0.1, -500), (-0.2, -800), (-0.3, -1000), (-0.4, -1200)]
+PRICE = 90
+MARKET = get_market(PRICE, INSTRUMENTS)
+print('market')
+print(MARKET)
 
-def cheapest_hedge(instruments, portfolio, limits, stock_price, market, memo):
-    current_value =  get_value(stock_price, instruments, portfolio)
+def cheapest_hedge(instruments, portfolio, limits, stock_price, market):
+    current_values =  get_values(stock_price, instruments, portfolio)
+    print('current values')
+    print(current_values)
+    current_value = sum(current_values)
     not_exceed_limit = True
 
-    full_hedges = []
+    # compute delta of each instrument
+    deltas = []
+    for idx, strike, ty in instruments:
+        deltas.append(get_delta(stock_price, strike, ty))
+    print('deltas')
+    print(deltas)
+
+    # compute full delta of entire portfolio
+    full_delta = 0
+    for delta, port in zip(deltas, portfolio):
+        full_delta += delta * port[1]
+    print('full delta')
+    print(full_delta)
+
+    # the deltas needed to adjust to pull the portfolio back within loss-limit in each scenario
+    adjust_deltas = []
     for limit in limits:
-        shock_value = get_value(stock_price * (1 + limit[0]), instruments, portfolio)
+        shock_value = sum(get_values(stock_price * (1 + limit[0]), instruments, portfolio))
         loss = shock_value - current_value
+        print('loss, limit')
+        print(loss, limit[1])
         if loss <= limit[1]:
             not_exceed_limit = False
-            full_hedge = 0
-            for inst, port in zip(instruments, portfolio):
-                delta = get_delta(stock_price, inst[1], inst[2]) * port[1]
-                change_value = delta * limit[0] * stock_price
+            # loss is approximately full-delta * stock_price * limit[0]
+            # need to add adjust_delta so that
+            # (full-delta + adjust-delta) * stock_price * limit[0] > limit[1]
+            adjust_delta = (limit[1] / (stock_price * limit[0])) - full_delta
+            adjust_deltas.append(adjust_delta)
 
     if not_exceed_limit:
         return None
 
+    min_adjust_delta = min(adjust_deltas)
+    max_adjust_delta = max(adjust_deltas)
 
+    if np.sign(min_adjust_delta) * np.sign(max_adjust_delta) == -1:
+        raise ValueError
 
+    if abs(max_adjust_delta) >= abs(min_adjust_delta):
+        adjust_delta = max_adjust_delta
+    else:
+        adjust_delta = min_adjust_delta
+
+    # version 1
+
+    remaindelta_costs = []
+    for i in range(len(market)):
+        mkt = market[i]
+        value = current_values[i]
+        delta = deltas[i]
+        if delta == 0:
+            print('instrument %d delta=0' % i)
+            continue
+        required_qty = adjust_delta / delta
+        if required_qty >= 0:
+            # buy delta at ask price
+            unit_price = mkt[3]
+            qty = mkt[4]
+        else:
+            # sell delta at big price
+            unit_price = mkt[1]
+            qty = mkt[2]
+        if qty >= abs(required_qty):
+            cost = abs(required_qty) * abs(unit_price - value)
+            remaindelta_costs.append((0, cost))
+        else:
+            cost = qty * abs(unit_price - value)
+            remaindelta = abs(adjust_delta) * (abs(required_qty) - qty) / abs(required_qty)
+            remaindelta_costs.append((remaindelta, cost))
+
+    sort_costs = sorted((cost, i) for i, cost in enumerate(remaindelta_costs))
+
+    if sort_costs[0][0][0] > 0:
+        raise ValueError
+
+    remaindelta_cost, i = sort_costs[0]
+
+    return remaindelta_cost[1], instruments[i][0], adjust_delta / deltas[i]
+
+    # version 2
+
+    # compute buy/sell-costs of adjust_delta using each instrument assuming not liquidity constraints
+    hypothesis_costs = []
+    for i in range(len(market)):
+        mkt = market[i]
+        value = current_values[i]
+        delta = deltas[i]
+        if delta == 0:
+            print('instrument %d delta=0' % i)
+            continue
+        required_qty = adjust_delta / delta
+        if required_qty >= 0:
+            # buy delta at ask price
+            unit_price = mkt[3]
+        else:
+            # sell delta at big price
+            unit_price = mkt[1]
+        hypothesis_costs.append(required_qty * abs(unit_price - value))
+
+    sort_costs = sorted((cost, i) for i, cost in enumerate(hypothesis_costs)) # cost for instrument i
+
+    total_cost = 0
+    while adjust_delta > 0:
+        cost, i = sort_costs.pop(0)
+        mkt = market[i]
+        value = current_values[i]
+        delta = deltas[i]
+        required_qty = adjust_delta / delta
+        if required_qty >= 0:
+            # buy delta at ask price
+            unit_price = mkt[3]
+            qty = mkt[4]
+        else:
+            # sell delta at big price
+            unit_price = mkt[1]
+            qty = mkt[2]
+        if abs(qty) < abs(required_qty): # this can be combined with previous loop if only use one trade
+            total_cost += abs(qty) * abs(unit_price - value)
+            adjust_delta -= delta * qty * np.sign(required_qty)
+        else:
+            total_cost += abs(required_qty) * abs(unit_price - value)
+            adjust_delta = 0
+
+    return total_cost
+
+print('cheapest hedge')
+print(cheapest_hedge(INSTRUMENTS, PORTFOLIO, LIMITS, PRICE, MARKET))
+
+"""
+3-card poker
+"""
+def p1_win_count(hands):
+    count = 0
+    for f1, s1, t1, f2, s2, t2 in hands:
+        dic1 = {}
+        for i in [f1, s1, t1]:
+            if i not in dic1:
+                dic1[i] = 1
+            else:
+                dic1[i] += 1
+        dic2 = {}
+        for i in [f2, s2, t2]:
+            if i not in dic2:
+                dic2[i] = 1
+            else:
+                dic2[i] += 1
+        sort1 = sorted([(cnt, value) for value, cnt in dic1.items()])
+        sort2 = sorted([(cnt, value) for value, cnt in dic2.items()])
+        flag = 0
+        if sort1[-1][0] > sort2[-1][0]:
+            flag = 1
+        elif sort1[-1][0] == sort2[-1][0]:
+            if sort1[-1][1] > sort2[-1][1]:
+                flag = 1
+            elif sort1[-1][1] == sort2[-1][1]:
+                if len(sort1) == 1:
+                    continue
+                if sort1[-2][1] > sort2[-2][1]:
+                    flag = 1
+                elif sort1[-2][1] == sort2[-2][1]:
+                    if len(sort1) == 2:
+                        continue
+                    if sort1[-3][1] > sort2[-3][1]:
+                        flag = 1
+
+        if flag:
+            count += 1
+            print('1 win')
+        print(f1, s1, t1, f2, s2, t2)
+    return count
+
+print(p1_win_count(
+    [
+        [7, 4, 2, 6, 7, 3],
+        [1, 8, 1, 7, 4, 2],
+        [7, 5, 2, 7, 4, 9],
+        [7, 8, 7, 8, 8, 2],
+        [8, 8, 9, 5, 5, 5],
+    ]))
+
+"""
+How many rocks on the floor can a ribbon surround?
+"""
+def orientation(o, a, b): # true if OAB counter-clockwise, false otherwise
+    return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0])
+
+def convex_hull(points): # compute the convex hull of a set of 2d points
+    ponits = sorted(set(points))
+
+    if len(points) <= 1:
+        return points
+
+    # build lower hull
+    lower = []
+    for p in points:
+        while len(lower) >= 2 and orientation(lower[-2], lower[-1], p) <= 0:
+            # lower[-2], lower[-1], p not counter-clockwise
+            lower.pop()
+        lower.append(p)
+
+    # build upper hull
+    for p in reversed(points):
+        while len(upper) >= 2 and orientation(upper[-2], upper[-1], p) <= 0:
+            upper.pop()
+        upper.append(p)
+
+    return lower[:-1] + upper[:-1]
+
+def dist2(a, b): # distance of 2 points
+    return np.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2)
+
+def perimeter(hull): # perimeter of convex hull, passing points ON the hull, not in
+    s = 0
+    for i in range(len(hull) - 1):
+        s += dist(hull[i], hull[i + 1])
+    return s
+
+def ribbon_surround_rocks(ribbon_len, rocks2d):
+    # knapsack: find maximum points can be put in a knapsack of capacity ribbon_len
+    # weight of a of points = perimeter of its convex hull
+
+    n = len(rocks2d)
+
+    memo = {} # memo(i, w) = maximal subset of the first i-1 points in the knapsack of capacity w
+    for i in range(n + 1):
+        for w in range(ribbon_len + 1):
+            if i == 0 or w == 0:
+                memo[(i, w)] = []
+            else:
+                points = memo[(i - 1, w)] # maximal subset of first i -2 ponts in the knapsack of cap w
+                hull = convex_hull(points)
+                weight = perimeter(hull)
+
+                # suppose add the current item (i-1) into knapsack
+                new_hull = convex_hull(points + [rocks2d[i - 1]])
+                new_weight = perimeter(new_hull)
+    pass #TODO
 
 

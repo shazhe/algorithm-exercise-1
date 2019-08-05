@@ -212,7 +212,7 @@ assert knapsack(50, [10, 20, 30], [60, 100, 120]) == 220
 
 ################################# maximum value | analytic #################################
 
-"""
+"""AKN
 Exchange apples for score. 1 apple + x cents = 1 score. 1 apple = y cents.
 Start with n apples m cents. Find maximum scores. Assume x any are non-negative integers.
 """
@@ -272,7 +272,7 @@ assert max_score_exchange_dp(4, 8, 4, 3) == 2
 
 ################################# maximum value minimum cost traversal | 1D | dynamic programming #################################
 
-"""
+"""AKN
 Step through an array of n numbers, with step size at most m. Collect scores of the
 number stepped on. Find maximum scores.
 """
@@ -305,7 +305,7 @@ assert max_score_array([10, 2, -10, 5, 20], 2) == 37
 assert max_score_array([3, 10, -20, -5], 1) == -12
 assert max_score_array([10, -20, -5], 2) == 5
 
-"""
+"""AKN
 Paint n houses in a row with m colors, adjacent ones with different colors.
 A cost matrix (n x m) gives the cost of painting each color for each house. Find minimum cost.
 """
@@ -331,7 +331,7 @@ assert min_cost_painting([[1, 2, 2], [2, 2, 1], [2, 1, 2]]) == 3
 
 ################################# maximum value minimum cost traversal | non-planar | backtracking #################################
 
-"""
+"""AKN
 Given an adjacent matrix of directional traversal cost, and the original node,
 find the minimum cost of traversing all nodes. Matrix: row outbound, column inbound.
 """
@@ -429,7 +429,7 @@ def build_graph_from_grid(grid):
 
 ################################# check path between nodes | non-planar | depth-first search and dynamic programming #################################
 
-"""
+"""AKN
 Escape a square grid, with 0, 1, -1. On 1, can move 4 directions;
 on 0, through original direction; hit -1, game over. Given starting
 positions of me and a puppy to help (both on 1).
@@ -618,7 +618,7 @@ def partition_gcd_greater1(lst):
 
 assert partition_gcd_greater1([2, 3, 2, 3, 3]) == 2
 
-"""
+"""AKN
 Easier variation of above question:
     each partition is a contiguous subarray, only need gcd(start of partition, end of partition) > 1.
 Contiguity makes problem much easier! Remember to check!
@@ -641,11 +641,9 @@ def contiguous_partition_gcd_greater1(lst):
 
 assert partition_gcd_greater1([2, 3, 2, 3, 3]) == 2
 
-
-
 ################################# geometry #################################
 
-"""
+"""AKN
 Given n distinct lattice points, check if there are three in the same line.
 """
 def overlap_tuples(lst): # given lst of tuples, check if exist two with overlapping elements
@@ -696,7 +694,7 @@ def colinear(points):
 assert colinear([(-1, -1), (0, 0), (1, 1)])
 assert colinear([(-1, -1), (0, 0), (1, 2)]) == False
 
-"""
+"""AKN
 Find local minima of a matrix of values representing heigths on 2D.
 """
 def local_minima(matrix):
@@ -731,7 +729,7 @@ assert local_minima([
                         [0, 5, 5, 3, 4]
                     ]) == [0, 1, 2]
 
-"""
+"""AKN
 Find intersections between a ray and a 3D sphere (if any), and also their distances to the origin of the ray.
 https://en.wikipedia.org/wiki/Line%E2%80%93sphere_intersection
 line: x = origin + d * dir
@@ -787,7 +785,7 @@ def ray_sphere_intercept(centerx, centery, centerz, r, originx, originy, originz
 print(ray_sphere_intercept(1, 4, 0, 4, 1, 2, 3, 1, 0, -2))
 assert ray_sphere_intercept(0., 0., 0., 1.52, 3., 4., 3., 1., 1., 1.) == [0.]
 
-"""
+"""AKN
 Find integral (i.e. integer) point of a triangle, in or on the triangle with min sum to the vertices.
 Not as hard as the Fermat-Torricelli point, where the integral condition was for the edges:
 https://www.mathblog.dk/project-euler-143-investigating-the-torricelli-point-of-a-triangle/
@@ -848,7 +846,7 @@ assert triangle_integral_point((0., 0.), (1., 0.), (1., 1.)) == [1, 0]
 
 ################################# trading #################################
 
-"""
+"""AKN
 Find the cheapest hedge.
 """
 import math
@@ -1050,7 +1048,9 @@ def cheapest_hedge(instruments, portfolio, limits, stock_price, market):
 print('cheapest hedge')
 print(cheapest_hedge(INSTRUMENTS, PORTFOLIO, LIMITS, PRICE, MARKET))
 
-"""
+################################# brute force #################################
+
+"""AKN
 3-card poker
 """
 def p1_win_count(hands):
@@ -1102,7 +1102,40 @@ print(p1_win_count(
         [8, 8, 9, 5, 5, 5],
     ]))
 
+################################# XOR #################################
+
+"""AKN
+Find minimum flips of k-contiguous subarray to make 0-1 array all 1.
+Given 0,1 value x, x ^ 1 will flip the value of x, x ^ 0 will not change x.
 """
+def min_kflip(arr, k):
+    n = len(arr)
+    records = [0] * n
+    flip = 0
+    count = 0
+
+    for i in range(n):
+        # flip always represents the current 0-1 state of the current position
+        flip ^= records[i] # records mark the change of the state of 'flip'
+        a = arr[i]
+        if a ^ flip == 0:
+            if i + k - 1 > n - 1:
+                return -1
+
+            flip ^= 1
+            count += 1
+
+            if i + k <= n - 1:
+                records[i + k] ^= 1 # remember that, after k consecutive positions, on i+k position, flip starts to change state
+    return count
+
+assert min_kflip([0, 0, 1, 0, 1, 1], 2) == -1
+assert min_kflip([0, 1, 0, 0, 1, 1], 2) == -1
+assert min_kflip([0, 0, 1, 0, 1, 1, 0], 2)
+
+################################# unsolved #################################
+
+"""AKN
 How many rocks on the floor can a ribbon surround?
 """
 def orientation(o, a, b): # true if OAB counter-clockwise, false otherwise
@@ -1160,4 +1193,162 @@ def ribbon_surround_rocks(ribbon_len, rocks2d):
                 new_weight = perimeter(new_hull)
     pass #TODO
 
+"""AKN
+Ranked election.
+"""
+def one_round(sort_cand, cand_vote1, num_ballots, ballots):
+    if len(sort_cand) == 0: # no rank in all ballots
+        return [[0, 100, -1]]
+    if len(sort_cand) == 1:
+        return [[0, 100, sort_cand[-1][1]]]
+    ret = []
+    n_vote1 = sort_cand[-1][0]
+    pct = 100 * n_vote1 / num_ballots
+    if sort_cand[-1][0] == sort_cand[-2][0]: # there is a tie
+        # if percentage is less than pct then both tied candidates win, leading to thrown out
+        ret.append([0, int(pct), -1])
+    else: # no tie
+        ret.append([(0, int(pct), sort_cand[-1][0])])
+    # eliminate last candidates first
+    tie_cands = [cand for count, cand in sort_cand if count == n_vote1]
+    for row in ballots:
+        if row[0] in tie_cands:
+            continue
+        else:
+            # add top vote to the next ranked cand who's in tie_cands
+            for cand in row[1:]:
+                if cand in tie_cands:
+                    cand_vote1[cand] += 1
+                    break
+    sort_cand = sorted([(count, cand) for cand, count in cand_vote1.items()])
+    nextround_ret = one_round(sort_cand, cand_vote1, num_ballots, ballots)
+    low_minus1 = 10
+    high_minus1 = 0
+    for low, high, cand in ret + nextround_ret:
+        if cand == -1:
+            low_minus1 = min(low, low_minus1)
+            high_minus1 = max(high, high_minus1)
+    real_ret = [[low_minus1, high_minus1, -1]]
+    cand_low = {}
+    cand_high = {}
+
+    for low, high, cand in ret + nextround_ret:
+        if cand != -1:
+            if cand in cand_low:
+                cand_low[cand] = min(cand_low[cand], low)
+                cand_low[cand] = max(cand_low[cand], high_minus1 + 1)
+                cand_high[cand] = max(cand_high[cand], high)
+    for cand in cand_low:
+        real_ret.append([cand_low[cand], cand_high[cand], cand])
+    return real_ret
+
+def election_percentages(num_candidates, num_ballots, ballots):
+    # this question is too ambiguous
+    # what do you mean by "percentage" of votes?
+    # well i understand it after spending 20min to digest the ambiguity...
+    if num_candidates == 0 or num_ballots == 0:
+        return [[0, 100, -1]]
+    cand_vote1 = {}
+    for row in ballots:
+        cand = row[0]
+        if cand == -1:
+            continue
+        if cand in cand_vote1:
+            cand_vote1[cand] += 1
+        else:
+            cand_vote1[cand] = 1
+    sort_cand = sorted([(count, cand) for cand, count in cand_vote1.items()])
+    if len(sort_cand) == 0: # no rank in all ballots
+        return [[0, 100, -1]]
+    if len(sort_cand) == 1:
+        return [[0, 100, sort_cand[-1][1]]]
+    ret = one_round(sort_cand, cand_vote1, num_ballots, ballots)
+    return ret
+
+"""
+print(election_percentages(5, 5,
+    [
+        [1,4,3,-1,-1],
+        [2,1,-1,-1,-1],
+        [1,3,2,0,-1],
+        [3,2,4,0,1],
+        [2,3,4,0,-1]
+    ]))
+"""
+
+################################# simulations #################################
+
+"""SP
+n bugs on a line moving in same direction, with different sizes. Bigger ones move
+faster and eat smaller ones. After long enough time, what's the expected num of bugs.
+"""
+def running_maxima(lst):
+    count = 0
+    run_max = -float('inf')
+    for n in lst:
+        if n >= run_max: # consecutive same running-maxima counts
+            count += 1
+            run_max = n
+    return count
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+def remaining_bugs(n, num_sim=10000, dist='uniform'):
+    counts = []
+    for _ in range(num_sim):
+        if dist == 'uniform':
+            lst = np.random.rand(n)
+        elif dist == 'normal':
+            lst = np.random.normal(100, 10, size=n)
+        count = running_maxima(lst)
+        counts.append(count)
+    ave = np.mean(counts)
+    print(dist, n, ave)
+    if n % 5000 == 0:
+        plt.hist(counts)
+        plt.title('%s|%d remaining bugs' % (dist, ave))
+        plt.savefig('%s_remaining_bugs_%d.png' % (dist, n))
+        plt.close()
+    return ave
+# expected number of running maxima of n bugs should the number of cycles in permulation of n elements
+# irrespective to the distribution of each bug size
+# this is the stirling numbers of the first kind divided by n!
+# as n tends to infinity, approximately mean log(n) + Euler-Mascheroni constant 0.57722...
+# with variance sqrt(log(n))
+
+def curve_remaining_bugs(num_sim=10000, dist='uniform'):
+    aves = []
+    for n in range(1000, 100001, 1000):
+        ave = remaining_bugs(n, num_sim, dist)
+        aves.append(ave)
+    print(aves)
+    plt.plot(list(range(len(aves))), np.log(aves))
+    plt.xlabel('number of bugs to start with')
+    plt.ylabel('expected remaining bugs')
+    plt.savefig(dist + '_remaining_bugs_curve.png')
+    plt.close()
+    return aves
+
+#curve_remaining_bugs(1000, dist='uniform')
+
+"""SP
+n people with n rooms. Keys are randomly distributed. What's the probability that no one has the right key.
+"""
+def keys_distribution(n, num_sim=1000):
+    counts = []
+    for _ in range(num_sim):
+        per = np.random.permutation(n)
+        flag = 1
+        for i in range(n):
+            if i == per[i]:
+                flag = 0
+                break
+        counts.append(flag)
+    return np.mean(counts), np.std(counts)
+# mean is about 0.366 to 0.37, std is about 0.482
+
+print('key distribution, probability of no one having the right key, and std. err:')
+for n in range(1000, 10001, 1000):
+    print(keys_distribution(n, num_sim=10000))
 
